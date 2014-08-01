@@ -1,7 +1,7 @@
 Mongoose Delete Plugin
 =========
 
-mongoose-delete is simple and lightweight plugin that enables soft deletion of documents in MongoDB. This plugin is based on [riyadhalnur's](https://github.com/riyadhalnur) lugin [mongoose-softdelete](https://github.com/riyadhalnur/mongoose-softdelete).
+mongoose-delete is simple and lightweight plugin that enables soft deletion of documents in MongoDB. This code is based on [riyadhalnur's](https://github.com/riyadhalnur) plugin [mongoose-softdelete](https://github.com/riyadhalnur/mongoose-softdelete).
 
 ##Features
 
