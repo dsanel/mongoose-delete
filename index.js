@@ -18,7 +18,7 @@ module.exports = function (schema, options) {
         next();
     });
 
-    var queries = ['find', 'findOne', 'findOneAndUpdate', 'update', 'count'];
+    var queries = ['find', 'findOne', 'findOneAndUpdate', 'count'];
 
     queries.forEach(function(query) {
         schema.pre(query, function(next) {
