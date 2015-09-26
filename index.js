@@ -18,6 +18,20 @@ module.exports = function (schema, options) {
         next();
     });
 
+    var queries = ['find', 'findOne', 'findOneAndUpdate', 'update', 'count'];
+
+    queries.forEach(function(query) {
+        schema.pre(query, function(next) {
+            var conditions = {
+                deleted: {
+                    '$ne': true
+                }
+            };
+            this.where(conditions);
+            next();
+        });
+    });
+
     schema.methods.delete = function (first, second) {
         var callback = typeof first === 'function' ? first : second,
             deletedBy = second !== undefined ? first : null;
