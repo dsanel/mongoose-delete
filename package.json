@@ -25,10 +25,10 @@
   },
   "homepage": "https://github.com/dsanel/mongoose-delete",
   "dependencies": {
-    "mongoose": "^3.8.14"
+    "mongoose": "^4.1.8"
   },
   "devDependencies": {
-    "chai": "^1.9.1",
-    "mocha": "^1.21.3"
+    "chai": "^3.3.0",
+    "mocha": "^2.3.3"
   }
 }
