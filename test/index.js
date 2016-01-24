@@ -1,4 +1,5 @@
 var should = require('chai').should(),
+    expect = require('chai').expect,
     assert = require('assert'),
     mongoose = require('mongoose'),
     Schema = mongoose.Schema;
@@ -6,6 +7,32 @@ var should = require('chai').should(),
 var mongoose_delete = require('../');
 
 mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test');
+
+describe("mongoose_delete delete method without callback function", function () {
+
+    var Test1Schema = new Schema({ name: String }, { collection: 'mongoose_delete_test0' });
+    Test1Schema.plugin(mongoose_delete);
+    var Test0 = mongoose.model('Test0', Test1Schema);
+
+    before(function (done) {
+        var puffy = new Test0({ name: 'Puffy' });
+
+        puffy.save(function () { done(); });
+    });
+
+    after(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test0", function () { done(); });
+    });
+
+    it("delete() -> should throw 'Wrong arguments!' message", function (done) {
+        Test0.findOne({ name: 'Puffy' }, function (err, puffy) {
+            should.not.exist(err);
+
+            expect(puffy.delete).to.throw('Wrong arguments!');
+            done();
+        });
+    });
+});
 
 describe("mongoose_delete plugin without options", function () {
 
@@ -145,4 +172,3 @@ describe("mongoose_delete with options: { deletedBy : true }", function () {
         });
     });
 });
-

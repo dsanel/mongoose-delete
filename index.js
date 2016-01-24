@@ -23,7 +23,7 @@ module.exports = function (schema, options) {
             deletedBy = second !== undefined ? first : null;
 
         if (typeof callback !== 'function') {
-            throw ('Wrong arguments!');
+            throw 'Wrong arguments!';
         }
 
         this.deleted = true;
