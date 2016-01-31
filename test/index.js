@@ -234,6 +234,10 @@ describe("check not overridden static methods", function () {
         TestModel.update({ name: 'Obi-Wan Kenobi' }, { name: 'Obi-Wan Kenobi Test'}, function (err, doc) {
             should.not.exist(err);
 
+            console.log("====");
+            console.log(doc);
+            console.log("====");
+
             doc.ok.should.equal(1);
             doc.nModified.should.equal(1);
             done();
