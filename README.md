@@ -12,6 +12,8 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
   - Add __deletedAt__ key to store time of deletion
   - Add __deletedBy__ key to record who deleted document
   - Restore deleted documents
+  - Option to override static methods (__count, find, findOne, findOneAndUpdate, update__)
+  - For overridden methods we have two additional methods: __methodDeleted__ and __methodWithDeleted__
 
 ## Installation
 Install using [npm](https://npmjs.org)
@@ -112,6 +114,58 @@ fluffy.save(function () {
         });
     });
 
+});
+
+```
+
+### Method overridden
+
+We have the option to override all standard methods or only specific methods. Overridden methods will exclude deleted documents from results, documents that have ```deleted = true```. Every overridden method will have two additional methods, so we will be able to work with deleted documents.
+
+| only not deleted documents | only deleted documents  | all documents               |
+|----------------------------|-------------------------|-----------------------------|
+| count()                    | countDeleted            | countWithDeleted            |
+| find()                     | findDeleted             | findWithDeleted             |
+| findOne()                  | findOneDeleted          | findOneWithDeleted          |
+| findOneAndUpdate()         | findOneAndUpdateDeleted | findOneAndUpdateWithDeleted |
+| update()                   | updateDeleted           | updateWithDeleted           |
+
+### Examples how to override one or multiple methods
+
+```javascript
+var mongoose_delete = require('mongoose-delete');
+
+var PetSchema = new Schema({
+    name: String
+});
+
+// Override all methods
+PetSchema.plugin(mongoose_delete, { overrideMethods: 'all' });
+// or 
+PetSchema.plugin(mongoose_delete, { overrideMethods: true });
+
+// Overide only specific methods
+PetSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'find', 'findOne', 'findOneAndUpdate', 'update'] });
+// or
+PetSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'find'] });
+// or (unrecognized method names will be ignored)
+PetSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'find', 'errorXyz'] });
+
+
+var Pet = mongoose.model('Pet', PetSchema);
+
+// Example of usage overridden methods
+
+Pet.find(function (err, documents) {
+  // will return only NOT DELETED documents
+});
+
+Pet.findDeleted(function (err, documents) {
+  // will return only DELETED documents
+});
+
+Pet.findWithDeleted(function (err, documents) {
+  // will return only ALL documents
 });
 
 ```
