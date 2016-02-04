@@ -165,7 +165,7 @@ Pet.findDeleted(function (err, documents) {
 });
 
 Pet.findWithDeleted(function (err, documents) {
-  // will return only ALL documents
+  // will return ALL documents
 });
 
 ```
