@@ -2,7 +2,10 @@ var should = require('chai').should(),
     expect = require('chai').expect,
     assert = require('assert'),
     mongoose = require('mongoose'),
+    mockgoose = require('mockgoose'),
     Schema = mongoose.Schema;
+
+mockgoose(mongoose);
 
 var mongoose_delete = require('../');
 
@@ -24,11 +27,11 @@ describe("mongoose_delete delete method without callback function", function () 
         mongoose.connection.db.dropCollection("mongoose_delete_test0", function () { done(); });
     });
 
-    it("delete() -> should throw 'Wrong arguments!' message", function (done) {
+    it("delete() -> should return a thenable (Promise)", function (done) {
         Test0.findOne({ name: 'Puffy' }, function (err, puffy) {
             should.not.exist(err);
 
-            expect(puffy.delete).to.throw('Wrong arguments!');
+            expect(puffy.delete()).to.have.property('then');
             done();
         });
     });
