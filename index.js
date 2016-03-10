@@ -3,6 +3,46 @@ var mongoose = require('mongoose'),
     Model = mongoose.Model,
     util = require('util');
 
+/**
+ * This code is taken from official mongoose repository
+ * https://github.com/Automattic/mongoose/blob/master/lib/query.js#L1996-L2018
+ */
+/* istanbul ignore next */
+function parseUpdateArguments (conditions, doc, options, callback) {
+    if ('function' === typeof options) {
+        // .update(conditions, doc, callback)
+        callback = options;
+        options = null;
+    } else if ('function' === typeof doc) {
+        // .update(doc, callback);
+        callback = doc;
+        doc = conditions;
+        conditions = {};
+        options = null;
+    } else if ('function' === typeof conditions) {
+        // .update(callback)
+        callback = conditions;
+        conditions = undefined;
+        doc = undefined;
+        options = undefined;
+    } else if (typeof conditions === 'object' && !doc && !options && !callback) {
+        // .update(doc)
+        doc = conditions;
+        conditions = undefined;
+        options = undefined;
+        callback = undefined;
+    }
+
+    var args = [];
+
+    if (conditions) args.push(conditions);
+    if (doc) args.push(doc);
+    if (options) args.push(options);
+    if (callback) args.push(callback);
+
+    return args;
+}
+
 module.exports = function (schema, options) {
     schema.add({ deleted: Boolean });
 
@@ -40,46 +80,6 @@ module.exports = function (schema, options) {
                     finalList.push(method);
                 }
             });
-        }
-
-        /**
-         * This code is taken from official mongoose repository
-         * https://github.com/Automattic/mongoose/blob/master/lib/query.js#L1996-L2018
-         */
-        /* istanbul ignore next */
-        function parseUpdateArguments (conditions, doc, options, callback) {
-            if ('function' === typeof options) {
-                // .update(conditions, doc, callback)
-                callback = options;
-                options = null;
-            } else if ('function' === typeof doc) {
-                // .update(doc, callback);
-                callback = doc;
-                doc = conditions;
-                conditions = {};
-                options = null;
-            } else if ('function' === typeof conditions) {
-                // .update(callback)
-                callback = conditions;
-                conditions = undefined;
-                doc = undefined;
-                options = undefined;
-            } else if (typeof conditions === 'object' && !doc && !options && !callback) {
-                // .update(doc)
-                doc = conditions;
-                conditions = undefined;
-                options = undefined;
-                callback = undefined;
-            }
-
-            var args = [];
-
-            if (conditions) args.push(conditions);
-            if (doc) args.push(doc);
-            if (options) args.push(options);
-            if (callback) args.push(callback);
-
-            return args;
         }
 
         finalList.forEach(function(method) {
