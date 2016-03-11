@@ -2,7 +2,10 @@ var should = require('chai').should(),
     expect = require('chai').expect,
     assert = require('assert'),
     mongoose = require('mongoose'),
+    mockgoose = require('mockgoose'),
     Schema = mongoose.Schema;
+
+mockgoose(mongoose);
 
 var mongoose_delete = require('../');
 
