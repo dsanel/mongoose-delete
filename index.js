@@ -121,10 +121,6 @@ module.exports = function (schema, options) {
         var callback = typeof first === 'function' ? first : second,
             deletedBy = second !== undefined ? first : null;
 
-        if (typeof callback !== 'function') {
-            throw 'Wrong arguments!';
-        }
-
         this.deleted = true;
 
         if (schema.path('deletedAt')) {
@@ -135,13 +131,13 @@ module.exports = function (schema, options) {
             this.deletedBy = deletedBy;
         }
 
-        this.save(callback);
+        return this.save(callback);
     };
 
     schema.methods.restore = function (callback) {
         this.deleted = false;
         this.deletedAt = undefined;
         this.deletedBy = undefined;
-        this.save(callback);
+        return this.save(callback);
     };
 };
