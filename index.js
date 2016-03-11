@@ -117,9 +117,9 @@ module.exports = function (schema, options) {
         });
     }
 
-    schema.methods.delete = function (first, second) {
-        var callback = typeof first === 'function' ? first : second,
-            deletedBy = second !== undefined ? first : null;
+    schema.methods.delete = function (deletedBy, cb) {
+        var callback = typeof deletedBy === 'function' ? deletedBy : cb,
+            deletedBy = cb !== undefined ? deletedBy : null;
 
         this.deleted = true;
 
@@ -134,10 +134,59 @@ module.exports = function (schema, options) {
         return this.save(callback);
     };
 
+    schema.statics.delete =  function (conditions, deletedBy, callback) {
+        if (typeof deletedBy === 'function') {
+            callback = deletedBy;
+            conditions = conditions;
+            deletedBy = null;
+        } else if (typeof conditions === 'function') {
+            callback = conditions;
+            conditions = {};
+            deletedBy = null;
+        }
+
+        var doc = {
+            deleted: true
+        };
+
+        if (schema.path('deletedAt')) {
+            doc.deletedAt = new Date();
+        }
+
+        if (schema.path('deletedBy')) {
+            doc.deletedBy = deletedBy;
+        }
+
+        if (this.updateWithDeleted) {
+            return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
+        } else {
+            return this.update(conditions, doc, { multi: true }, callback);
+        }
+    };
+
     schema.methods.restore = function (callback) {
         this.deleted = false;
         this.deletedAt = undefined;
         this.deletedBy = undefined;
         return this.save(callback);
+    };
+
+    schema.statics.restore =  function (conditions, callback) {
+        if (typeof conditions === 'function') {
+            callback = conditions;
+            conditions = {};
+        }
+
+        var doc = {
+            deleted: false,
+            deletedAt: undefined,
+            deletedBy: undefined
+        };
+
+        if (this.updateWithDeleted) {
+            return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
+        } else {
+            return this.update(conditions, doc, { multi: true }, callback);
+        }
     };
 };

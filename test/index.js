@@ -700,3 +700,230 @@ describe("check the existence of override static methods: { overrideMethods: ['c
         done();
     });
 });
+
+describe("delete multiple documents", function () {
+    var TestSchema = new Schema({ name: String, side: Number }, { collection: 'mongoose_delete_test' });
+    TestSchema.plugin(mongoose_delete, { overrideMethods: 'all', deletedAt : true, deletedBy : true });
+    var TestModel = mongoose.model('Test14', TestSchema);
+
+    beforeEach(function (done) {
+        TestModel.create(
+            [
+                { name: 'Obi-Wan Kenobi', side: 0},
+                { name: 'Darth Vader', side: 1},
+                { name: 'Luke Skywalker', side: 0}
+            ], done);
+    });
+
+    afterEach(function(done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test", done);
+    });
+
+    it("delete(cb) -> delete multiple documents", function (done) {
+        TestModel.delete(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(3);
+
+            done();
+        });
+    });
+
+    it("delete(query, cb) -> delete multiple documents with conditions", function (done) {
+        TestModel.delete({side:0}, function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(2);
+
+            done();
+        });
+    });
+
+
+    it("delete(query, deletedBy, cb) -> delete multiple documents with conditions and user ID", function (done) {
+        var userId = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
+
+        TestModel.delete({side:1}, userId, function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(1);
+
+            done();
+        });
+    });
+
+    it("delete().exec() -> delete all documents", function (done) {
+        TestModel.delete().exec(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(3);
+
+            done();
+        });
+    });
+
+    it("delete(query).exec() -> delete multiple documents with conditions", function (done) {
+        TestModel.delete({side:0}).exec(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(2);
+
+            done();
+        });
+    });
+
+    it("delete(query, deletedBy).exec() -> delete multiple documents with conditions and user ID", function (done) {
+        var userId = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
+
+        TestModel.delete({side:1}, userId).exec(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(1);
+
+            done();
+        });
+    });
+
+    it("delete({}, deletedBy).exec() -> delete all documents passing user ID", function (done) {
+        var userId = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
+
+        TestModel.delete({}, userId).exec(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(3);
+
+            done();
+        });
+    });
+});
+
+describe("delete multiple documents (no plugin options)", function () {
+    var TestSchema = new Schema({ name: String, side: Number }, { collection: 'mongoose_delete_test' });
+    TestSchema.plugin(mongoose_delete);
+    var TestModel = mongoose.model('Test13', TestSchema);
+
+    beforeEach(function (done) {
+        TestModel.create(
+            [
+                { name: 'Obi-Wan Kenobi', side: 0},
+                { name: 'Darth Vader', side: 1},
+                { name: 'Luke Skywalker', side: 0}
+            ], done);
+    });
+
+    afterEach(function(done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test", done);
+    });
+
+    it("delete(cb) -> delete multiple documents", function (done) {
+        TestModel.delete(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(3);
+
+            done();
+        });
+    });
+});
+
+describe("restore multiple documents", function () {
+    var TestSchema = new Schema({ name: String, side: Number }, { collection: 'mongoose_restore_test' });
+    TestSchema.plugin(mongoose_delete, { overrideMethods: 'all', deletedAt : true, deletedBy : true });
+    var TestModel = mongoose.model('Test15', TestSchema);
+
+    beforeEach(function (done) {
+        TestModel.create(
+            [
+                { name: 'Obi-Wan Kenobi', side: 0},
+                { name: 'Darth Vader', side: 1, deleted: true},
+                { name: 'Luke Skywalker', side: 0}
+            ], done);
+    });
+
+    afterEach(function(done) {
+        mongoose.connection.db.dropCollection("mongoose_restore_test", done);
+    });
+
+    it("restore(cb) -> restore all documents", function (done) {
+        TestModel.restore(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(3);
+
+            done();
+        });
+    });
+
+    it("restore(query, cb) -> restore multiple documents with conditions", function (done) {
+        TestModel.restore({side:0}, function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(2);
+
+            done();
+        });
+    });
+
+    it("restore().exec() -> restore all documents", function (done) {
+        TestModel.restore().exec(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(3);
+
+            done();
+        });
+    });
+
+    it("restore(query).exec() -> restore multiple documents with conditions", function (done) {
+        TestModel.restore({side:0}).exec(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(2);
+
+            done();
+        });
+    });
+
+});
+
+describe("restore multiple documents (no plugin options)", function () {
+    var TestSchema = new Schema({ name: String, side: Number }, { collection: 'mongoose_restore_test' });
+    TestSchema.plugin(mongoose_delete);
+    var TestModel = mongoose.model('Test16', TestSchema);
+
+    beforeEach(function (done) {
+        TestModel.create(
+            [
+                { name: 'Obi-Wan Kenobi', side: 0},
+                { name: 'Darth Vader', side: 1, deleted: true},
+                { name: 'Luke Skywalker', side: 0}
+            ], done);
+    });
+
+    afterEach(function(done) {
+        mongoose.connection.db.dropCollection("mongoose_restore_test", done);
+    });
+
+    it("restore(cb) -> restore all documents", function (done) {
+        TestModel.restore(function (err, documents) {
+            should.not.exist(err);
+
+            documents.ok.should.equal(1);
+            documents.n.should.equal(3);
+
+            done();
+        });
+    });
+});
