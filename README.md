@@ -8,12 +8,13 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
 
 ##Features
 
-  - Add __deleted__ (true-false) key on document
-  - Add __deletedAt__ key to store time of deletion
-  - Add __deletedBy__ key to record who deleted document
-  - Restore deleted documents
-  - Option to override static methods (__count, find, findOne, findOneAndUpdate, update__)
-  - For overridden methods we have two additional methods: __methodDeleted__ and __methodWithDeleted__
+  - [Add __deleted__ (true-false) key on document](#simple-usage)
+  - [Add __deletedAt__ key to store time of deletion](#save-time-of-deletion)
+  - [Add __deletedBy__ key to record who deleted document](#who-has-deleted-the-data)
+  - Restore deleted documents using __restore__ method
+  - [Bulk delete and restore](#bulk-delete-and-restore)
+  - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, find, findOne, findOneAndUpdate, update__)
+  - [For overridden methods we have two additional methods](#method-overridden): __methodDeleted__ and __methodWithDeleted__
 
 ## Installation
 Install using [npm](https://npmjs.org)
@@ -40,18 +41,17 @@ var Pet = mongoose.model('Pet', PetSchema);
 var fluffy = new Pet({ name: 'Fluffy' });
 
 fluffy.save(function () {
-    // mongodb: { deleted: false, name: 'Fluffy', _id: 53db63bb322236e666c3d7a6 }
+    // mongodb: { deleted: false, name: 'Fluffy' }
 
     fluffy.delete(function () {
-        // mongodb: { deleted: true, name: 'Fluffy', _id: 53db63bb322236e666c3d7a6 }
+        // mongodb: { deleted: true, name: 'Fluffy' }
 
         fluffy.restore(function () {
-            // mongodb: { deleted: false, name: 'Fluffy', _id: 53db63bb322236e666c3d7a6 }
+            // mongodb: { deleted: false, name: 'Fluffy' }
         });
     });
 
 });
-
 ```
 
 
@@ -71,18 +71,17 @@ var Pet = mongoose.model('Pet', PetSchema);
 var fluffy = new Pet({ name: 'Fluffy' });
 
 fluffy.save(function () {
-    // mongodb: { deleted: false, name: 'Fluffy', _id: 53db63bb322236e666c3d7a6 }
+    // mongodb: { deleted: false, name: 'Fluffy' }
 
     fluffy.delete(function () {
-        // mongodb: { deleted: true, name: 'Fluffy', _id: 53db63bb322236e666c3d7a6, deletedAt: ISODate("2014-08-01T10:34:53.171Z")}
+        // mongodb: { deleted: true, name: 'Fluffy', deletedAt: ISODate("2014-08-01T10:34:53.171Z")}
 
         fluffy.restore(function () {
-            // mongodb: { deleted: false, name: 'Fluffy', _id: 53db63bb322236e666c3d7a6 }
+            // mongodb: { deleted: false, name: 'Fluffy' }
         });
     });
 
 });
-
 ```
 
 
@@ -102,20 +101,56 @@ var Pet = mongoose.model('Pet', PetSchema);
 var fluffy = new Pet({ name: 'Fluffy' });
 
 fluffy.save(function () {
-    // mongodb: { deleted: false, name: 'Fluffy', _id: 53db63bb322236e666c3d7a6 }
+    // mongodb: { deleted: false, name: 'Fluffy' }
 
     var idUser = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
 
     fluffy.delete(idUser, function () {
-        // mongodb: { deleted: true, name: 'Fluffy', _id: 53db63bb322236e666c3d7a6, deletedBy: ObjectId("53da93b16b4a6670076b16bf")}
+        // mongodb: { deleted: true, name: 'Fluffy', deletedBy: ObjectId("53da93b16b4a6670076b16bf")}
 
         fluffy.restore(function () {
-            // mongodb: { deleted: false, name: 'Fluffy', _id: 53db63bb322236e666c3d7a6 }
+            // mongodb: { deleted: false, name: 'Fluffy' }
         });
     });
 
 });
+```
 
+### Bulk delete and restore
+
+```javascript
+var mongoose_delete = require('mongoose-delete');
+
+var PetSchema = new Schema({
+    name: String,
+    age: Number
+});
+
+PetSchema.plugin(mongoose_delete);
+
+var Pet = mongoose.model('Pet', PetSchema);
+
+var idUser = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
+
+// Delete multiple object, callback
+Pet.delete(function (err, result) { ... });
+Pet.delete({age:10}, function (err, result) { ... });
+Pet.delete({}, idUser, function (err, result) { ... });
+Pet.delete({age:10}, idUser, function (err, result) { ... });
+
+// Delete multiple object, promise
+Pet.delete().exec(function (err, result) { ... });
+Pet.delete({age:10}).exec(function (err, result) { ... });
+Pet.delete({}, idUser).exec(function (err, result) { ... });
+Pet.delete({age:10}, idUser).exec(function (err, result) { ... });
+
+// Restore multiple object, callback
+Pet.restore(function (err, result) { ... });
+Pet.restore({age:10}, function (err, result) { ... });
+
+// Restore multiple object, promise
+Pet.restore().exec(function (err, result) { ... });
+Pet.restore({age:10}).exec(function (err, result) { ... });
 ```
 
 ### Method overridden

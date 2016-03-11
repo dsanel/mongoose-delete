@@ -1,3 +1,9 @@
+## [v0.3.0]
+> Mar 11, 2016
+
+- Bulk delete and restore
+- Remove requirement for callback in delete() and restore()
+
 ## [v0.2.1]
 > Feb 1, 2016
 
