@@ -1,3 +1,8 @@
+## [v0.3.1]
+> April 20, 2016
+
+- Add option to disable validation on delete #6
+
 ## [v0.3.0]
 > Mar 11, 2016
 

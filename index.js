@@ -131,6 +131,10 @@ module.exports = function (schema, options) {
             this.deletedBy = deletedBy;
         }
 
+        if (options && options.validateBeforeDelete === false) {
+            return this.save({ validateBeforeSave: false }, callback);
+        }
+
         return this.save(callback);
     };
 

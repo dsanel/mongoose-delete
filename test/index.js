@@ -927,3 +927,91 @@ describe("restore multiple documents (no plugin options)", function () {
         });
     });
 });
+
+describe("model validation on delete (default): { validateBeforeDelete: true }", function () {
+    var TestSchema = new Schema({
+        name: { type: String, required: true }
+    }, { collection: 'mongoose_restore_test' });
+    TestSchema.plugin(mongoose_delete);
+    var TestModel = mongoose.model('Test17', TestSchema);
+
+    beforeEach(function (done) {
+        TestModel.create(
+          [
+              { name: 'Luke Skywalker'}
+          ], done);
+    });
+
+    afterEach(function(done) {
+        mongoose.connection.db.dropCollection("mongoose_restore_test", done);
+    });
+
+    it("delete() -> should raise ValidationError error", function (done) {
+        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+            should.not.exist(err);
+            luke.name = "";
+
+            luke.delete(function (err, success) {
+                err.should.exist;
+                err.name.should.exist;
+                err.name.should.equal('ValidationError');
+                done();
+            });
+        });
+    });
+
+    it("delete() -> should not raise ValidationError error", function (done) {
+        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+            should.not.exist(err);
+            luke.name = "Test Name";
+
+            luke.delete(function (err, success) {
+                should.not.exist(err);
+                done();
+            });
+        });
+    });
+});
+
+describe("model validation on delete: { validateBeforeDelete: false }", function () {
+    var TestSchema = new Schema({
+        name: { type: String, required: true }
+    }, { collection: 'mongoose_restore_test' });
+    TestSchema.plugin(mongoose_delete, { validateBeforeDelete: false });
+    var TestModel = mongoose.model('Test18', TestSchema);
+
+    beforeEach(function (done) {
+        TestModel.create(
+          [
+              { name: 'Luke Skywalker'}
+          ], done);
+    });
+
+    afterEach(function(done) {
+        mongoose.connection.db.dropCollection("mongoose_restore_test", done);
+    });
+
+    it("delete() -> should not raise ValidationError error", function (done) {
+        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+            should.not.exist(err);
+            luke.name = "";
+
+            luke.delete(function (err, success) {
+                should.not.exist(err);
+                done();
+            });
+        });
+    });
+
+    it("delete() -> should not raise ValidationError error", function (done) {
+        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+            should.not.exist(err);
+            luke.name = "Test Name";
+
+            luke.delete(function (err, success) {
+                should.not.exist(err);
+                done();
+            });
+        });
+    });
+});
