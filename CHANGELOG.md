@@ -1,4 +1,9 @@
 ## [v0.3.1]
+> April 26, 2016
+
+- Correct field name into documentation, `validateBeforeDelete`
+
+## [v0.3.1]
 > April 20, 2016
 
 - Add option to disable validation on delete #6
