@@ -215,13 +215,13 @@ var PetSchema = new Schema({
     name: { type: String, required: true }
 });
 
-// By default, validateBeforeSave is set to true
+// By default, validateBeforeDelete is set to true
 PetSchema.plugin(mongoose_delete);
 // the previous line is identical to next line
-PetSchema.plugin(mongoose_delete, { validateBeforeSave: true });
+PetSchema.plugin(mongoose_delete, { validateBeforeDelete: true });
 
-// To disable model validation on delete, set validateBeforeSave option to false
-PetSchema.plugin(mongoose_delete, { validateBeforeSave: false });
+// To disable model validation on delete, set validateBeforeDelete option to false
+PetSchema.plugin(mongoose_delete, { validateBeforeDelete: false });
 
 // NOTE: This is based on existing Mongoose validateBeforeSave option
 // http://mongoosejs.com/docs/guide.html#validateBeforeSave
