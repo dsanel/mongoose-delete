@@ -44,7 +44,12 @@ function parseUpdateArguments (conditions, doc, options, callback) {
 }
 
 module.exports = function (schema, options) {
-    schema.add({ deleted: Boolean });
+    schema.add({
+        deleted: {
+            type: Boolean,
+            default: false
+        }
+    });
 
     if (options && options.deletedAt === true) {
         schema.add({ deletedAt: { type: Date} });
