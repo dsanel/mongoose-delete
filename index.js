@@ -47,16 +47,17 @@ module.exports = function (schema, options) {
     schema.add({
         deleted: {
             type: Boolean,
-            default: false
+            default: false, 
+            index: true
         }
     });
 
     if (options && options.deletedAt === true) {
-        schema.add({ deletedAt: { type: Date} });
+        schema.add({ deletedAt: { type: Date, index: true } });
     }
 
     if (options && options.deletedBy === true) {
-        schema.add({ deletedBy: Schema.Types.ObjectId });
+        schema.add({ deletedBy: Schema.Types.ObjectId, index: true });
     }
 
     schema.pre('save', function (next) {
@@ -90,7 +91,7 @@ module.exports = function (schema, options) {
         finalList.forEach(function(method) {
             if (method === 'count' || method === 'find' || method === 'findOne') {
                 schema.statics[method] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').equals(false);
+                    return Model[method].apply(this, arguments).where('deleted').ne(true);
                 };
                 schema.statics[method + 'Deleted'] = function () {
                     return Model[method].apply(this, arguments).where('deleted').ne(false);
