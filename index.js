@@ -90,7 +90,7 @@ module.exports = function (schema, options) {
         finalList.forEach(function(method) {
             if (method === 'count' || method === 'find' || method === 'findOne') {
                 schema.statics[method] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').equals(false);
+                    return Model[method].apply(this, arguments).where('deleted').ne(true);
                 };
                 schema.statics[method + 'Deleted'] = function () {
                     return Model[method].apply(this, arguments).where('deleted').ne(false);
