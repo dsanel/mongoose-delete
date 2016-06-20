@@ -1015,3 +1015,47 @@ describe("model validation on delete: { validateBeforeDelete: false }", function
         });
     });
 });
+
+describe("mongoose_delete indexFields options", function () {
+    it("all fields must have index: { indexFields: true }", function (done) {
+        var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_indexFields' });
+        TestSchema.plugin(mongoose_delete, { indexFields: true, deletedAt : true, deletedBy : true });
+        var Test0 = mongoose.model('Test0_indexFields', TestSchema);
+
+        expect(Test0.schema.paths.deleted._index).to.be.true;
+        expect(Test0.schema.paths.deletedAt._index).to.be.true;
+        expect(Test0.schema.paths.deletedBy._index).to.be.true;
+        done();
+    });
+
+    it("all fields must have index: { indexFields: 'all' }", function (done) {
+        var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_indexFields' });
+        TestSchema.plugin(mongoose_delete, { indexFields: 'all', deletedAt : true, deletedBy : true });
+        var Test0 = mongoose.model('Test1_indexFields', TestSchema);
+
+        expect(Test0.schema.paths.deleted._index).to.be.true;
+        expect(Test0.schema.paths.deletedAt._index).to.be.true;
+        expect(Test0.schema.paths.deletedBy._index).to.be.true;
+        done();
+    });
+
+    it("only 'deleted' field must have index: { indexFields: ['deleted'] }", function (done) {
+        var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_indexFields' });
+        TestSchema.plugin(mongoose_delete, { indexFields: ['deleted'], deletedAt : true, deletedBy : true });
+        var Test0 = mongoose.model('Test2_indexFields', TestSchema);
+
+        expect(Test0.schema.paths.deleted._index).to.be.true;
+        done();
+    });
+
+    it("only 'deletedAt' and 'deletedBy' fields must have index: { indexFields: ['deletedAt', 'deletedBy'] }", function (done) {
+        var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_indexFields' });
+        TestSchema.plugin(mongoose_delete, { indexFields: ['deletedAt', 'deletedBy'], deletedAt : true, deletedBy : true });
+        var Test0 = mongoose.model('Test3_indexFields', TestSchema);
+
+        expect(Test0.schema.paths.deleted._index).to.be.false;
+        expect(Test0.schema.paths.deletedAt._index).to.be.true;
+        expect(Test0.schema.paths.deletedBy._index).to.be.true;
+        done();
+    });
+});

@@ -16,6 +16,7 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
   - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, find, findOne, findOneAndUpdate, update__)
   - [For overridden methods we have two additional methods](#method-overridden): __methodDeleted__ and __methodWithDeleted__
   - [Disable model validation on delete](#disable-model-validation-on-delete)
+  - [Option to create index on delete fields](#create-index-on-fields) (__deleted__, __deletedAt__, __deletedBy__)
 
 ## Installation
 Install using [npm](https://npmjs.org)
@@ -225,6 +226,28 @@ PetSchema.plugin(mongoose_delete, { validateBeforeDelete: false });
 
 // NOTE: This is based on existing Mongoose validateBeforeSave option
 // http://mongoosejs.com/docs/guide.html#validateBeforeSave
+
+```
+
+### Create index on fields
+
+```javascript
+var mongoose_delete = require('mongoose-delete');
+
+var PetSchema = new Schema({
+    name: String
+});
+
+// Index all field related to plugin (deleted, deletedAt, deletedBy)
+PetSchema.plugin(mongoose_delete, { indexFields: 'all' });
+// or 
+PetSchema.plugin(mongoose_delete, { indexFields: true });
+
+// Index only specific fields
+PetSchema.plugin(mongoose_delete, { indexFields: ['deleted', 'deletedBy'] });
+// or
+PetSchema.plugin(mongoose_delete, { indexFields: ['deletedAt'] });
+
 
 ```
 

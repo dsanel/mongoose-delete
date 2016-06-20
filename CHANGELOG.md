@@ -1,3 +1,9 @@
+## [v0.3.4]
+> June 20, 2016
+
+- Methods override fix for existent DB #11
+- Option to create indexes for deleted, deletedAt, deletedBy, related to #12
+
 ## [v0.3.3]
 > July 1, 2016
 
