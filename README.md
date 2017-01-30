@@ -7,7 +7,7 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
 [![Coverage Status](https://coveralls.io/repos/github/dsanel/mongoose-delete/badge.svg?branch=master&version=new)](https://coveralls.io/github/dsanel/mongoose-delete?branch=master)
 
 ##Features
-
+  - [Add __delete()__ method on document (do not override standard __remove()__ method)](#simple-usage)
   - [Add __deleted__ (true-false) key on document](#simple-usage)
   - [Add __deletedAt__ key to store time of deletion](#save-time-of-deletion)
   - [Add __deletedBy__ key to record who deleted document](#who-has-deleted-the-data)
@@ -45,6 +45,7 @@ var fluffy = new Pet({ name: 'Fluffy' });
 fluffy.save(function () {
     // mongodb: { deleted: false, name: 'Fluffy' }
 
+    // note: you should invoke exactly delete() method instead of standard fluffy.remove()
     fluffy.delete(function () {
         // mongodb: { deleted: true, name: 'Fluffy' }
 
@@ -75,6 +76,7 @@ var fluffy = new Pet({ name: 'Fluffy' });
 fluffy.save(function () {
     // mongodb: { deleted: false, name: 'Fluffy' }
 
+    // note: you should invoke exactly delete() method instead of standard fluffy.remove()
     fluffy.delete(function () {
         // mongodb: { deleted: true, name: 'Fluffy', deletedAt: ISODate("2014-08-01T10:34:53.171Z")}
 
@@ -107,6 +109,7 @@ fluffy.save(function () {
 
     var idUser = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
 
+    // note: you should invoke exactly delete() method instead of standard fluffy.remove()
     fluffy.delete(idUser, function () {
         // mongodb: { deleted: true, name: 'Fluffy', deletedBy: ObjectId("53da93b16b4a6670076b16bf")}
 
