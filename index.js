@@ -155,8 +155,10 @@ module.exports = function (schema, options) {
     }
 
     schema.methods.delete = function (deletedBy, cb) {
-        var callback = typeof deletedBy === 'function' ? deletedBy : cb,
-            deletedBy = cb !== undefined ? deletedBy : null;
+        if (typeof deletedBy === 'function') {
+          cb = deletedBy
+          deleteBy = null
+        }
 
         this.deleted = true;
 
@@ -169,10 +171,10 @@ module.exports = function (schema, options) {
         }
 
         if (options.validateBeforeDelete === false) {
-            return this.save({ validateBeforeSave: false }, callback);
+            return this.save({ validateBeforeSave: false }, cb);
         }
 
-        return this.save(callback);
+        return this.save(cb);
     };
 
     schema.statics.delete =  function (conditions, deletedBy, callback) {
