@@ -157,7 +157,7 @@ module.exports = function (schema, options) {
     schema.methods.delete = function (deletedBy, cb) {
         if (typeof deletedBy === 'function') {
           cb = deletedBy
-          deleteBy = null
+          deletedBy = null
         }
 
         this.deleted = true;
