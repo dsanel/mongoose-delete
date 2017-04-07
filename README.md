@@ -6,7 +6,7 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
 [![Build Status](https://travis-ci.org/dsanel/mongoose-delete.svg?branch=master)](https://travis-ci.org/dsanel/mongoose-delete)
 [![Coverage Status](https://coveralls.io/repos/github/dsanel/mongoose-delete/badge.svg?branch=master&version=new)](https://coveralls.io/github/dsanel/mongoose-delete?branch=master)
 
-##Features
+## Features
   - [Add __delete()__ method on document (do not override standard __remove()__ method)](#simple-usage)
   - [Add __deleted__ (true-false) key on document](#simple-usage)
   - [Add __deletedAt__ key to store time of deletion](#save-time-of-deletion)
