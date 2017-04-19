@@ -74,9 +74,10 @@ function parseIndexFields (options) {
 module.exports = function (schema, options) {
     options = options || {};
     var indexFields = parseIndexFields(options)
+    var deletedFieldName = options.deletedFieldName || 'deleted';
 
     schema.add({
-        deleted: {
+        [deletedFieldName]: {
             type: Boolean,
             default: false,
             index: indexFields.deleted
@@ -122,10 +123,10 @@ module.exports = function (schema, options) {
         finalList.forEach(function(method) {
             if (method === 'count' || method === 'find' || method === 'findOne') {
                 schema.statics[method] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(true);
+                    return Model[method].apply(this, arguments).where(deletedFieldName).ne(true);
                 };
                 schema.statics[method + 'Deleted'] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(false);
+                    return Model[method].apply(this, arguments).where(deletedFieldName).ne(false);
                 };
                 schema.statics[method + 'WithDeleted'] = function () {
                     return Model[method].apply(this, arguments);
@@ -189,7 +190,7 @@ module.exports = function (schema, options) {
         }
 
         var doc = {
-            deleted: true
+            [deletedFieldName]: true
         };
 
         if (schema.path('deletedAt')) {
@@ -208,7 +209,7 @@ module.exports = function (schema, options) {
     };
 
     schema.methods.restore = function (callback) {
-        this.deleted = false;
+        this[deletedFieldName] = false;
         this.deletedAt = undefined;
         this.deletedBy = undefined;
         return this.save(callback);
@@ -221,7 +222,7 @@ module.exports = function (schema, options) {
         }
 
         var doc = {
-            deleted: false,
+            [deletedFieldName]: false,
             deletedAt: undefined,
             deletedBy: undefined
         };
