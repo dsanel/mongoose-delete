@@ -154,7 +154,7 @@ describe("mongoose_delete with options: { deletedBy : true }", function () {
             puffy.delete(id, function (err, success) {
                 should.not.exist(err);
 
-                success.deletedBy.should.equal(id);
+                success.deletedBy.should.equal(id.toString());
                 done();
             });
         });

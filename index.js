@@ -88,7 +88,7 @@ module.exports = function (schema, options) {
     }
 
     if (options.deletedBy === true) {
-        schema.add({ deletedBy: { type: Schema.Types.ObjectId, index: indexFields.deletedBy }});
+        schema.add({ deletedBy: { type: String, index: indexFields.deletedBy }});
     }
 
     schema.pre('save', function (next) {
