@@ -174,6 +174,51 @@ describe("mongoose_delete with options: { deletedBy : true }", function () {
     });
 });
 
+describe("mongoose_delete with options: { deletedBy : true, deletedByType: String }", function () {
+
+    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
+    TestSchema.plugin(mongoose_delete, { deletedBy : true, deletedByType: String });
+    var Test = mongoose.model('TestDeletedByType', TestSchema);
+
+    before(function (done) {
+        var puffy = new Test({ name: 'Puffy' });
+
+        puffy.save(function () { done(); });
+    });
+
+    after(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test", function () { done(); });
+    });
+
+    var id = "custom_user_id_12345678";
+
+    it("delete() -> should save deletedBy key", function (done) {
+        Test.findOne({ name: 'Puffy' }, function (err, puffy) {
+            should.not.exist(err);
+
+            puffy.delete(id, function (err, success) {
+                should.not.exist(err);
+
+                success.deletedBy.should.equal(id);
+                done();
+            });
+        });
+    });
+
+    it("restore() -> should set deleted:false and delete deletedBy key", function (done) {
+        Test.findOne({ name: 'Puffy' }, function (err, puffy) {
+            should.not.exist(err);
+
+            puffy.restore(function (err, success) {
+                if (err) { throw err; }
+                success.deleted.should.equal(false);
+                should.not.exist(success.deletedBy);
+                done();
+            });
+        });
+    });
+});
+
 describe("check not overridden static methods", function () {
     var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
     TestSchema.plugin(mongoose_delete);
