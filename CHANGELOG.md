@@ -1,3 +1,11 @@
+## [v0.4.0]
+> July 10, 2016
+
+- Add custom typeKey support #22
+- Add option to set custom type for deletedBy
+- Support instance method delete promise
+- Add specification about remove() to README
+
 ## [v0.3.4]
 > June 20, 2016
 
