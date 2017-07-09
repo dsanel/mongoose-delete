@@ -71,24 +71,25 @@ function parseIndexFields (options) {
     return indexFields;
 }
 
+function createSchemaObject (typeKey, typeValue, options) {
+    options[typeKey] = typeValue;
+    return options;
+}
+
 module.exports = function (schema, options) {
     options = options || {};
     var indexFields = parseIndexFields(options)
 
-    schema.add({
-        deleted: {
-            type: Boolean,
-            default: false,
-            index: indexFields.deleted
-        }
-    });
+    var typeKey = schema.options.typeKey;
+
+    schema.add({ deleted: createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted }) });
 
     if (options.deletedAt === true) {
-        schema.add({ deletedAt: { type: Date, index: indexFields.deletedAt }});
+        schema.add({ deletedAt: createSchemaObject(typeKey, Date, { index: indexFields.deletedAt }) });
     }
 
     if (options.deletedBy === true) {
-        schema.add({ deletedBy: { type: options.deletedByType || Schema.Types.ObjectId, index: indexFields.deletedBy }});
+        schema.add({ deletedBy: createSchemaObject(typeKey, options.deletedByType || Schema.Types.ObjectId, { index: indexFields.deletedBy }) });
     }
 
     schema.pre('save', function (next) {
