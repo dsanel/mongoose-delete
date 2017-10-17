@@ -101,7 +101,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'find', 'findOne', 'findOneAndUpdate', 'update'];
+        var overridableMethods = ['count', 'find', 'findOne', 'findOneAndUpdate', 'update', 'aggregate'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -128,10 +128,29 @@ module.exports = function (schema, options) {
                 schema.statics[method + 'Deleted'] = function () {
                     return Model[method].apply(this, arguments).where('deleted').ne(false);
                 };
-                schema.statics[method + 'WithDeleted'] = function () {
-                    return Model[method].apply(this, arguments);
-                };
+
+            } else if (method === 'aggregate'){
+
+              schema.statics[method] = function () {
+                  var args = [];
+                  Array.prototype.push.apply( args, arguments );
+
+                  args[0].unshift({ $match : { deleted : {'$ne': true } } });
+
+                  return Model[method].apply(this, args);
+              };
+
+              schema.statics[method + 'Deleted'] = function () {
+                var args = [];
+                Array.prototype.push.apply( args, arguments );
+
+                  args[0].unshift({ $match : { deleted : {'$ne': false } } });
+
+                  return Model[method].apply(this, args);
+              };
+
             } else {
+
                 schema.statics[method] = function () {
                     var args = parseUpdateArguments.apply(undefined, arguments);
 
@@ -148,10 +167,11 @@ module.exports = function (schema, options) {
                     return Model[method].apply(this, args);
                 };
 
-                schema.statics[method + 'WithDeleted'] = function () {
-                    return Model[method].apply(this, arguments);
-                };
             }
+
+            schema.statics[method + 'WithDeleted'] = function () {
+                return Model[method].apply(this, arguments);
+            };
         });
     }
 

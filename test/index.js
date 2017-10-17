@@ -631,6 +631,58 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
         });
 
     });
+
+    it("aggregate([{$project : {name : 1} }]) -> should return 1 document", function (done) {
+        TestModel.aggregate([
+          {
+            $project : {name : 1}
+          }
+        ], function (err, documents) {
+            should.not.exist(err);
+
+            documents.length.should.equal(1);
+            done();
+        });
+    });
+
+    it("aggregateDeleted([{$project : {name : 1} }]) -> should return deleted documents", function (done) {
+      TestModel.aggregateDeleted([
+        {
+          $project : {name : 1}
+        }
+      ], function (err, documents) {
+            should.not.exist(err);
+
+            documents.length.should.equal(2);
+            done();
+        });
+    });
+
+    it("aggregateDeleted([{$project : {name : 1} }]) -> should return deleted documents", function (done) {
+      TestModel.aggregateDeleted([
+        {
+          $project : {name : 1}
+        }
+      ], function (err, documents) {
+            should.not.exist(err);
+
+            documents.length.should.equal(2);
+            done();
+        });
+    });
+
+    it("aggregateWithDeleted([{$project : {name : 1} }]) -> should return deleted documents", function (done) {
+      TestModel.aggregateWithDeleted([
+        {
+          $project : {name : 1}
+        }
+      ], function (err, documents) {
+            should.not.exist(err);
+
+            documents.length.should.equal(3);
+            done();
+        });
+    });
 });
 
 describe("check the existence of override static methods: { overrideMethods: true }", function () {
