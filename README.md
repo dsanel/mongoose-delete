@@ -121,6 +121,33 @@ fluffy.save(function () {
 });
 ```
 
+### Delete by ID
+
+```javascript
+var mongoose_delete = require('mongoose-delete');
+
+var PetSchema = new Schema({
+    name: String
+});
+
+PetSchema.plugin(mongoose_delete, { deletedBy : true });
+
+var Pet = mongoose.model('Pet', PetSchema);
+
+var fluffy = new Pet({ name: 'Fluffy' });
+
+fluffy.save(function() {
+
+    // Delete single object by id
+    Pet.deleteById(fluffy._id, function(err, result) { ... }); // { n: 1, nModified: 1, ok: 1 }
+    
+    // OR with userID
+    var idUser = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
+    Pet.deleteById(fluffy._id, idUser, function(err, result) { ... }); // { n: 1, nModified: 1, ok: 1 }
+
+});
+```
+
 ### Bulk delete and restore
 
 ```javascript

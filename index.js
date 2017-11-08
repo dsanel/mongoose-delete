@@ -157,8 +157,8 @@ module.exports = function (schema, options) {
 
     schema.methods.delete = function (deletedBy, cb) {
         if (typeof deletedBy === 'function') {
-          cb = deletedBy
-          deletedBy = null
+            cb = deletedBy
+            deletedBy = null
         }
 
         this.deleted = true;
@@ -205,6 +205,34 @@ module.exports = function (schema, options) {
             return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
         } else {
             return this.update(conditions, doc, { multi: true }, callback);
+        }
+    };
+
+    schema.statics.deleteById =  function (id, deletedBy, callback) {
+        if (typeof deletedBy === 'function') {
+            callback = deletedBy;
+            id = id;
+            deletedBy = null;
+        }
+        var conditions = {
+            _id: id
+        }
+        var doc = {
+            deleted: true
+        };
+
+        if (schema.path('deletedAt')) {
+            doc.deletedAt = new Date();
+        }
+
+        if (schema.path('deletedBy')) {
+            doc.deletedBy = deletedBy;
+        }
+
+        if (this.updateWithDeleted) {
+            return this.updateWithDeleted(conditions, doc, { multi: false }, callback);
+        } else {
+            return this.update(conditions, doc, { multi: false }, callback);
         }
     };
 
