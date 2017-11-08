@@ -1244,3 +1244,90 @@ describe("mongoose_delete indexFields options", function () {
         done();
     });
 });
+
+describe("deleteById: delete single docment with ID with options", function() {
+    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_deletedById' });
+    TestSchema.plugin(mongoose_delete, { overrideMethods: 'all', deletedAt : true, deletedBy : true });
+
+    var TestDeleteById = mongoose.model('TestDeletedByIdTest1', TestSchema);
+    var puffy = {};
+
+    before(function (done) {
+        TestDeleteById.create(
+            [{ name: 'Puffy One'},
+            { name: 'Puffy two'},
+            { name: 'Puffy three'}], function(err, documents) {
+                puffy = {
+                    one : documents[0],
+                    two : documents[1],
+                    three: documents[2]
+                };
+                done();
+            });
+    });
+
+    after(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test_deletedById", function () { done(); });
+    });
+
+    it("deleteById() -> should delete only one document with matching id with userId", function (done) {
+        var userId = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
+
+        TestDeleteById.deleteById(puffy.one._id, userId, function(err, documents) {
+            expect(err).to.be.null;
+            expect(documents).to.have.property("ok", 1);
+            expect(documents).to.have.property("n", 1);
+            TestDeleteById.findOneWithDeleted({_id: puffy.one._id}, function(err, puffy) {
+                expect(err).to.be.null;
+                expect(puffy).to.have.property("deleted", true);
+                expect(puffy).to.have.property("deletedBy").to.satisfy(function(value) {
+                    return value != undefined || value != null;
+                });
+                expect(puffy).to.have.property("deletedBy").to.satisfy(function(value) {
+                    return value != undefined || value != null;
+                });
+                done();
+            });
+        });
+    });
+});
+
+describe("deleteById: delete single docment with ID without options", function() {
+    var TestSchemaDeletedBy = new Schema({ name: String }, { collection: 'mongoose_delete_test_deletedById' });
+    TestSchemaDeletedBy.plugin(mongoose_delete);
+
+    var TestDeleteById = mongoose.model('TestDeletedByIdTest2', TestSchemaDeletedBy);
+    var puffy = {};
+
+    before(function (done) {
+        TestDeleteById.create(
+            [{ name: 'Puffy One'},
+            { name: 'Puffy two'},
+            { name: 'Puffy three'}], function(err, documents) {
+                puffy = {
+                    one : documents[0],
+                    two : documents[1],
+                    three: documents[2]
+                };
+                done();
+            });
+    });
+
+    after(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test_deletedById", function () { done(); });
+    });
+
+    it("deleteById() -> should delete only one document with matching id", function (done) {
+
+        TestDeleteById.deleteById(puffy.one._id, function(err, documents) {
+            expect(err).to.be.null;
+            expect(documents).to.have.property("ok", 1);
+            expect(documents).to.have.property("n", 1);
+            TestDeleteById.findById(puffy.one._id, function(err, puffy) {
+                expect(err).to.be.null;
+                expect(puffy).to.have.property("deleted", true);
+                done();
+            });
+        });
+    });
+});
