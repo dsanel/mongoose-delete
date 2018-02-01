@@ -1,7 +1,7 @@
 language: node_js
 node_js:
-  - 0.12
+  - 8
 services:
   - mongodb
-script: "npm run-script test-travis"
-after_script: "npm install coveralls@2.11.6 && cat ./coverage/lcov.info | coveralls"
+script: "npm install --no-save mongoose@5 && npm run-script test-travis"
+after_script: "npm install --no-save coveralls@2.11.6 && cat ./coverage/lcov.info | coveralls"
