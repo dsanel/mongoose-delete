@@ -4,4 +4,4 @@ node_js:
 services:
   - mongodb
 script: "npm install --no-save mongoose@5 && npm run-script test-travis"
-after_script: "npm install --no-save coveralls@2.11.6 && cat ./coverage/lcov.info | coveralls"
+after_script: "npm install --no-save coveralls@3.0.0 && cat ./coverage/lcov.info | coveralls"
