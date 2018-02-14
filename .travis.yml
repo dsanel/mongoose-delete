@@ -1,6 +1,8 @@
 language: node_js
 node_js:
   - 8
+  - 6
+  - 4
 services:
   - mongodb
 script: "npm install --no-save mongoose@5 && npm run-script test-travis"
