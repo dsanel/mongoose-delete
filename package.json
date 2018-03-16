@@ -1,12 +1,12 @@
 {
   "name": "mongoose-delete",
-  "version": "0.4.1",
+  "version": "0.4.0",
   "description": "Mongoose soft delete plugin",
   "author": "Sanel Deljkic <dsanel@gmail.com> (http://dsanel.github.io/)",
   "main": "index.js",
   "scripts": {
     "test": "make test",
-    "test-travis": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec --exit ./test/*"
+    "test-travis": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec ./test/*"
   },
   "repository": {
     "type": "git",
@@ -26,11 +26,11 @@
   },
   "homepage": "https://github.com/dsanel/mongoose-delete",
   "peerDependencies": {
-    "mongoose": "4.x || 5.x"
+    "mongoose": "4.x"
   },
   "devDependencies": {
-    "chai": "^4.1.2",
+    "chai": "^3.3.0",
     "istanbul": "^0.4.2",
-    "mocha": "^5.0.0"
+    "mocha": "^2.3.3"
   }
 }
