@@ -1,3 +1,9 @@
+## [v0.4.1]
+> July 24, 2018
+
+- mongoose 5 support (tests pass, code unchanged)
+- deprecated support for NodeJS < 4 & MongoDb < 3
+
 ## [v0.4.0]
 > July 10, 2016
 
