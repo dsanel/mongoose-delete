@@ -123,10 +123,10 @@ module.exports = function (schema, options) {
         finalList.forEach(function(method) {
             if (method === 'count' || method === 'find' || method === 'findOne') {
                 schema.statics[method] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(true);
+                    return Model[method].apply(this, arguments).where({deleted: false});
                 };
                 schema.statics[method + 'Deleted'] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(false);
+                    return Model[method].apply(this, arguments).where({deleted: true});
                 };
                 schema.statics[method + 'WithDeleted'] = function () {
                     return Model[method].apply(this, arguments);
@@ -135,7 +135,7 @@ module.exports = function (schema, options) {
                 schema.statics[method] = function () {
                     var args = parseUpdateArguments.apply(undefined, arguments);
 
-                    args[0].deleted = {'$ne': true};
+                    args[0].deleted = false;
 
                     return Model[method].apply(this, args);
                 };
@@ -143,7 +143,7 @@ module.exports = function (schema, options) {
                 schema.statics[method + 'Deleted'] = function () {
                     var args = parseUpdateArguments.apply(undefined, arguments);
 
-                    args[0].deleted = {'$ne': false};
+                    args[0].deleted = true;
 
                     return Model[method].apply(this, args);
                 };
