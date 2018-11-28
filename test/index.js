@@ -394,6 +394,15 @@ describe("check not overridden static methods", function () {
         });
     });
 
+    it("countDocuments() -> should return 3 documents", function (done) {
+        TestModel.countDocuments(function (err, count) {
+            should.not.exist(err);
+
+            count.should.equal(3);
+            done();
+        });
+    });
+
     it("find() -> should return 3 documents", function (done) {
         TestModel.find(function (err, documents) {
             should.not.exist(err);
@@ -629,7 +638,6 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("updateWithDeleted() -> should update all document", function (done) {
-
         TestModel.updateWithDeleted({}, { name: 'Test 654'}, { multi: true },  function (err, doc) {
             should.not.exist(err);
 
@@ -637,7 +645,6 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
             doc.n.should.equal(3);
             done();
         });
-
     });
 });
 
@@ -658,6 +665,21 @@ describe("check the existence of override static methods: { overrideMethods: tru
 
     it("countWithDeleted() -> method should exist", function (done) {
         expect(TestModel.countWithDeleted).to.exist;
+        done();
+    });
+
+    it("countDocuments() -> method should exist", function (done) {
+        expect(TestModel.countDocuments).to.exist;
+        done();
+    });
+
+    it("countDocumentsDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsDeleted).to.exist;
+        done();
+    });
+
+    it("countDocumentsWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsWithDeleted).to.exist;
         done();
     });
 
@@ -722,9 +744,9 @@ describe("check the existence of override static methods: { overrideMethods: tru
     });
 });
 
-describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'find', 'findOne', 'findOneAndUpdate', 'update'] }", function () {
+describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update'] }", function () {
     var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
-    TestSchema.plugin(mongoose_delete, { overrideMethods: ['testError', 'count', 'find', 'findOne', 'findOneAndUpdate', 'update'] });
+    TestSchema.plugin(mongoose_delete, { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update'] });
     var TestModel = mongoose.model('Test7', TestSchema);
 
     it("testError() -> method should not exist", function (done) {
@@ -744,6 +766,21 @@ describe("check the existence of override static methods: { overrideMethods: ['t
 
     it("countWithDeleted() -> method should exist", function (done) {
         expect(TestModel.countWithDeleted).to.exist;
+        done();
+    });
+
+    it("countDocuments() -> method should exist", function (done) {
+        expect(TestModel.countDocuments).to.exist;
+        done();
+    });
+
+    it("countDocumentsDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsDeleted).to.exist;
+        done();
+    });
+
+    it("countDocumentsWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsWithDeleted).to.exist;
         done();
     });
 
@@ -810,7 +847,7 @@ describe("check the existence of override static methods: { overrideMethods: ['t
 
 describe("check the existence of override static methods: { overrideMethods: ['count', 'find'] }", function () {
     var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
-    TestSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'find'] });
+    TestSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'countDocuments', 'find'] });
     var TestModel = mongoose.model('Test8', TestSchema);
 
     it("testError() -> method should not exist", function (done) {
@@ -830,6 +867,21 @@ describe("check the existence of override static methods: { overrideMethods: ['c
 
     it("countWithDeleted() -> method should exist", function (done) {
         expect(TestModel.countWithDeleted).to.exist;
+        done();
+    });
+
+    it("countDocuments() -> method should exist", function (done) {
+        expect(TestModel.countDocuments).to.exist;
+        done();
+    });
+
+    it("countDocumentsDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsDeleted).to.exist;
+        done();
+    });
+
+    it("countDocumentsWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsWithDeleted).to.exist;
         done();
     });
 
