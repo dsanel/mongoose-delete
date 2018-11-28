@@ -208,6 +208,19 @@ module.exports = function (schema, options) {
         }
     };
 
+    schema.statics.deleteById =  function (id, deletedBy, callback) {
+        if (arguments.length === 0 || typeof id === 'function') {
+            const msg = 'First argument is mandatory and must not be a function.'
+            throw new TypeError(msg);
+        }
+
+        var conditions = {
+            _id: id
+        };
+
+        return this.delete(conditions, deletedBy, callback);
+    };
+
     schema.methods.restore = function (callback) {
         this.deleted = false;
         this.deletedAt = undefined;
