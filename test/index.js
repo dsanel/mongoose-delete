@@ -1,12 +1,20 @@
 var should = require('chai').should(),
     expect = require('chai').expect,
-    assert = require('assert'),
     mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 
 var mongoose_delete = require('../');
 
-mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test');
+before(function (done) {
+  mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test', { useNewUrlParser: true });
+  done();
+});
+
+after(function (done) {
+  mongoose.disconnect();
+  done();
+});
+
 
 describe("mongoose_delete delete method without callback function", function () {
 
