@@ -1,6 +1,5 @@
 language: node_js
-node_js:
-  - 0.12
+node_js: [10, 9, 8, 7, 6, 5, 4]
 services:
   - mongodb
 script: "npm run-script test-travis"
