@@ -112,7 +112,7 @@ describe("mongoose_delete plugin without options", function () {
     });
 
     it("deleteById() -> should throws exception: first argument error", function (done) {
-        const errMessage = 'First argument is mandatory and must not be a function.';
+        var errMessage = 'First argument is mandatory and must not be a function.';
         expect(Test1.deleteById).to.throw(errMessage);
         expect(() => { Test1.deleteById(() => {}) }).to.throw(errMessage);
         done();

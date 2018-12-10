@@ -122,7 +122,7 @@ module.exports = function (schema, options) {
 
         finalList.forEach(function(method) {
             if (['count', 'countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
-                let modelMethodName = method;
+                var modelMethodName = method;
 
                 // countDocuments do not exist in Mongoose v4
                 /* istanbul ignore next */
@@ -218,7 +218,7 @@ module.exports = function (schema, options) {
 
     schema.statics.deleteById =  function (id, deletedBy, callback) {
         if (arguments.length === 0 || typeof id === 'function') {
-            const msg = 'First argument is mandatory and must not be a function.';
+            var msg = 'First argument is mandatory and must not be a function.';
             throw new TypeError(msg);
         }
 
