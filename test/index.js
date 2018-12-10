@@ -111,6 +111,13 @@ describe("mongoose_delete plugin without options", function () {
         });
     });
 
+    it("deleteById() -> should throws exception: first argument error", function (done) {
+        const errMessage = 'First argument is mandatory and must not be a function.';
+        expect(Test1.deleteById).to.throw(errMessage);
+        expect(() => { Test1.deleteById(() => {}) }).to.throw(errMessage);
+        done();
+    });
+
     it("restore() -> should set deleted:false", function (done) {
         Test1.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
@@ -572,12 +579,17 @@ describe("check not overridden static methods", function () {
     });
 
     it("countDocuments() -> should return 3 documents", function (done) {
-        TestModel.countDocuments(function (err, count) {
-            should.not.exist(err);
+        // INFO: countDocuments is added in mongoose 5.x
+        if (typeof TestModel.countDocuments === 'function') {
+            TestModel.countDocuments(function (err, count) {
+                should.not.exist(err);
 
-            count.should.equal(3);
+                count.should.equal(3);
+                done();
+            });
+        } else {
             done();
-        });
+        }
     });
 
     it("find() -> should return 3 documents", function (done) {

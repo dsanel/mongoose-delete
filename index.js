@@ -122,14 +122,22 @@ module.exports = function (schema, options) {
 
         finalList.forEach(function(method) {
             if (['count', 'countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
+                let modelMethodName = method;
+
+                // countDocuments do not exist in Mongoose v4
+                /* istanbul ignore next */
+                if (method === 'countDocuments' && typeof Model.countDocuments !== 'function') {
+                    modelMethodName = 'count';
+                }
+
                 schema.statics[method] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(true);
+                    return Model[modelMethodName].apply(this, arguments).where('deleted').ne(true);
                 };
                 schema.statics[method + 'Deleted'] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(false);
+                    return Model[modelMethodName].apply(this, arguments).where('deleted').ne(false);
                 };
                 schema.statics[method + 'WithDeleted'] = function () {
-                    return Model[method].apply(this, arguments);
+                    return Model[modelMethodName].apply(this, arguments);
                 };
             } else {
                 schema.statics[method] = function () {
@@ -210,7 +218,7 @@ module.exports = function (schema, options) {
 
     schema.statics.deleteById =  function (id, deletedBy, callback) {
         if (arguments.length === 0 || typeof id === 'function') {
-            const msg = 'First argument is mandatory and must not be a function.'
+            const msg = 'First argument is mandatory and must not be a function.';
             throw new TypeError(msg);
         }
 

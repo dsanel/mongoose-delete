@@ -8,12 +8,13 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
 
 ## Features
   - [Add __delete()__ method on document (do not override standard __remove()__ method)](#simple-usage)
+  - [Add __deleteById()__ static method](#simple-usage)
   - [Add __deleted__ (true-false) key on document](#simple-usage)
   - [Add __deletedAt__ key to store time of deletion](#save-time-of-deletion)
   - [Add __deletedBy__ key to record who deleted document](#who-has-deleted-the-data)
   - Restore deleted documents using __restore__ method
   - [Bulk delete and restore](#bulk-delete-and-restore)
-  - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, find, findOne, findOneAndUpdate, update__)
+  - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, countDocuments, find, findOne, findOneAndUpdate, update__)
   - [For overridden methods we have two additional methods](#method-overridden): __methodDeleted__ and __methodWithDeleted__
   - [Disable model validation on delete](#disable-model-validation-on-delete)
   - [Option to create index on delete fields](#create-index-on-fields) (__deleted__, __deletedAt__, __deletedBy__)
@@ -55,6 +56,14 @@ fluffy.save(function () {
     });
 
 });
+
+var examplePetId = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
+
+// INFO: Example usage of deleteById static method
+Pet.deleteById(examplePetId, function (err, petDocument) {
+    // mongodb: { deleted: true, name: 'Fluffy', _id: '53da93b1...' }
+});
+
 ```
 
 
@@ -187,7 +196,7 @@ PetSchema.plugin(mongoose_delete, { overrideMethods: true });
 // Overide only specific methods
 PetSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'find', 'findOne', 'findOneAndUpdate', 'update'] });
 // or
-PetSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'find'] });
+PetSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'countDocuments', 'find'] });
 // or (unrecognized method names will be ignored)
 PetSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'find', 'errorXyz'] });
 
