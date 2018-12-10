@@ -101,7 +101,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'find', 'findOne', 'findOneAndUpdate', 'update'];
+        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -121,15 +121,23 @@ module.exports = function (schema, options) {
         }
 
         finalList.forEach(function(method) {
-            if (method === 'count' || method === 'find' || method === 'findOne') {
+            if (['count', 'countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
+                var modelMethodName = method;
+
+                // countDocuments do not exist in Mongoose v4
+                /* istanbul ignore next */
+                if (method === 'countDocuments' && typeof Model.countDocuments !== 'function') {
+                    modelMethodName = 'count';
+                }
+
                 schema.statics[method] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(true);
+                    return Model[modelMethodName].apply(this, arguments).where('deleted').ne(true);
                 };
                 schema.statics[method + 'Deleted'] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(false);
+                    return Model[modelMethodName].apply(this, arguments).where('deleted').ne(false);
                 };
                 schema.statics[method + 'WithDeleted'] = function () {
-                    return Model[method].apply(this, arguments);
+                    return Model[modelMethodName].apply(this, arguments);
                 };
             } else {
                 schema.statics[method] = function () {
@@ -206,6 +214,19 @@ module.exports = function (schema, options) {
         } else {
             return this.update(conditions, doc, { multi: true }, callback);
         }
+    };
+
+    schema.statics.deleteById =  function (id, deletedBy, callback) {
+        if (arguments.length === 0 || typeof id === 'function') {
+            var msg = 'First argument is mandatory and must not be a function.';
+            throw new TypeError(msg);
+        }
+
+        var conditions = {
+            _id: id
+        };
+
+        return this.delete(conditions, deletedBy, callback);
     };
 
     schema.methods.restore = function (callback) {

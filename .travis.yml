@@ -1,7 +1,6 @@
 language: node_js
-node_js:
-  - 0.12
+node_js: [10, 9, 8, 7, 6, 5, 4]
 services:
   - mongodb
 script: "npm run-script test-travis"
-after_script: "npm install coveralls@2.11.6 && cat ./coverage/lcov.info | coveralls"
+after_script: "npm install coveralls@3.0.2 && cat ./coverage/lcov.info | coveralls"

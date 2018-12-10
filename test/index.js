@@ -1,31 +1,43 @@
 var should = require('chai').should(),
     expect = require('chai').expect,
-    assert = require('assert'),
     mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 
 var mongoose_delete = require('../');
 
-mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test');
+before(function (done) {
+    mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test', {useNewUrlParser: true});
+    done();
+});
+
+after(function (done) {
+    mongoose.disconnect();
+    done();
+});
+
 
 describe("mongoose_delete delete method without callback function", function () {
 
-    var Test1Schema = new Schema({ name: String }, { collection: 'mongoose_delete_test0' });
+    var Test1Schema = new Schema({name: String}, {collection: 'mongoose_delete_test0'});
     Test1Schema.plugin(mongoose_delete);
     var Test0 = mongoose.model('Test0', Test1Schema);
 
     before(function (done) {
-        var puffy = new Test0({ name: 'Puffy' });
+        var puffy = new Test0({name: 'Puffy'});
 
-        puffy.save(function () { done(); });
+        puffy.save(function () {
+            done();
+        });
     });
 
     after(function (done) {
-        mongoose.connection.db.dropCollection("mongoose_delete_test0", function () { done(); });
+        mongoose.connection.db.dropCollection("mongoose_delete_test0", function () {
+            done();
+        });
     });
 
     it("delete() -> should return a thenable (Promise)", function (done) {
-        Test0.findOne({ name: 'Puffy' }, function (err, puffy) {
+        Test0.findOne({name: 'Puffy'}, function (err, puffy) {
             should.not.exist(err);
 
             expect(puffy.delete()).to.have.property('then');
@@ -36,26 +48,34 @@ describe("mongoose_delete delete method without callback function", function () 
 
 describe("mongoose_delete plugin without options", function () {
 
-    var Test1Schema = new Schema({ name: String }, { collection: 'mongoose_delete_test1' });
+    var Test1Schema = new Schema({name: String}, {collection: 'mongoose_delete_test1'});
     Test1Schema.plugin(mongoose_delete);
     var Test1 = mongoose.model('Test1', Test1Schema);
+    var puffy1 = new Test1({name: 'Puffy1'});
+    var puffy2 = new Test1({name: 'Puffy2'});
 
     before(function (done) {
-        var puffy = new Test1({ name: 'Puffy' });
-
-        puffy.save(function () { done(); });
+        puffy1.save(function () {
+            puffy2.save(function () {
+                done();
+            });
+        });
     });
 
     after(function (done) {
-        mongoose.connection.db.dropCollection("mongoose_delete_test1", function () { done(); });
+        mongoose.connection.db.dropCollection("mongoose_delete_test1", function () {
+            done();
+        });
     });
 
     it("delete() -> should set deleted:true", function (done) {
-        Test1.findOne({ name: 'Puffy' }, function (err, puffy) {
+        Test1.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
 
             puffy.delete(function (err, success) {
-                if (err) { throw err; }
+                if (err) {
+                    throw err;
+                }
                 success.deleted.should.equal(true);
                 done();
             });
@@ -63,23 +83,49 @@ describe("mongoose_delete plugin without options", function () {
     });
 
     it("delete() -> should not save 'deletedAt' value", function (done) {
-        Test1.findOne({ name: 'Puffy' }, function (err, puffy) {
+        Test1.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
 
             puffy.delete(function (err, success) {
-                if (err) { throw err; }
+                if (err) {
+                    throw err;
+                }
                 should.not.exist(success.deletedAt);
                 done();
             });
         });
     });
 
+    it("deleteById() -> should set deleted:true and not save 'deletedAt'", function (done) {
+        Test1.deleteById(puffy2._id, function (err, documents) {
+            should.not.exist(err);
+            documents.ok.should.equal(1);
+            documents.n.should.equal(1);
+
+            Test1.findOne({name: 'Puffy2'}, function (err, doc) {
+                should.not.exist(err);
+                doc.deleted.should.equal(true);
+                should.not.exist(doc.deletedAt);
+                done();
+            });
+        });
+    });
+
+    it("deleteById() -> should throws exception: first argument error", function (done) {
+        var errMessage = 'First argument is mandatory and must not be a function.';
+        expect(Test1.deleteById).to.throw(errMessage);
+        expect(() => { Test1.deleteById(() => {}) }).to.throw(errMessage);
+        done();
+    });
+
     it("restore() -> should set deleted:false", function (done) {
-        Test1.findOne({ name: 'Puffy' }, function (err, puffy) {
+        Test1.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
 
             puffy.restore(function (err, success) {
-                if (err) { throw err; }
+                if (err) {
+                    throw err;
+                }
                 success.deleted.should.equal(false);
                 done();
             });
@@ -89,91 +135,143 @@ describe("mongoose_delete plugin without options", function () {
 
 describe("mongoose_delete plugin without options, using option: typeKey", function () {
 
-  var Test1Schema = new Schema({ name: String }, { collection: 'mongoose_delete_test1', typeKey: '$type' });
-  Test1Schema.plugin(mongoose_delete);
-  var Test1 = mongoose.model('Test1a', Test1Schema);
+    var Test1Schema = new Schema({name: String}, {collection: 'mongoose_delete_test1', typeKey: '$type'});
+    Test1Schema.plugin(mongoose_delete);
+    var Test1 = mongoose.model('Test1a', Test1Schema);
+    var puffy1 = new Test1({name: 'Puffy1'});
+    var puffy2 = new Test1({name: 'Puffy2'});
 
-  before(function (done) {
-    var puffy = new Test1({ name: 'Puffy' });
-
-    puffy.save(function () { done(); });
-  });
-
-  after(function (done) {
-    mongoose.connection.db.dropCollection("mongoose_delete_test1", function () { done(); });
-  });
-
-  it("delete() -> should set deleted:true", function (done) {
-    Test1.findOne({ name: 'Puffy' }, function (err, puffy) {
-      should.not.exist(err);
-
-      puffy.delete(function (err, success) {
-        if (err) { throw err; }
-        success.deleted.should.equal(true);
-        done();
-      });
+    before(function (done) {
+        puffy1.save(function () {
+            puffy2.save(function () {
+                done();
+            });
+        });
     });
-  });
 
-  it("delete() -> should not save 'deletedAt' value", function (done) {
-    Test1.findOne({ name: 'Puffy' }, function (err, puffy) {
-      should.not.exist(err);
-
-      puffy.delete(function (err, success) {
-        if (err) { throw err; }
-        should.not.exist(success.deletedAt);
-        done();
-      });
+    after(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test1", function () {
+            done();
+        });
     });
-  });
 
-  it("restore() -> should set deleted:false", function (done) {
-    Test1.findOne({ name: 'Puffy' }, function (err, puffy) {
-      should.not.exist(err);
+    it("delete() -> should set deleted:true", function (done) {
+        Test1.findOne({name: 'Puffy1'}, function (err, puffy) {
+            should.not.exist(err);
 
-      puffy.restore(function (err, success) {
-        if (err) { throw err; }
-        success.deleted.should.equal(false);
-        done();
-      });
+            puffy.delete(function (err, success) {
+                if (err) {
+                    throw err;
+                }
+                success.deleted.should.equal(true);
+                done();
+            });
+        });
     });
-  });
+
+    it("delete() -> should not save 'deletedAt' value", function (done) {
+        Test1.findOne({name: 'Puffy1'}, function (err, puffy) {
+            should.not.exist(err);
+
+            puffy.delete(function (err, success) {
+                if (err) {
+                    throw err;
+                }
+                should.not.exist(success.deletedAt);
+                done();
+            });
+        });
+    });
+
+    it("deleteById() -> should set deleted:true and not save 'deletedAt'", function (done) {
+        Test1.deleteById(puffy2._id, function (err, documents) {
+            should.not.exist(err);
+            documents.ok.should.equal(1);
+            documents.n.should.equal(1);
+
+            Test1.findOne({name: 'Puffy2'}, function (err, doc) {
+                should.not.exist(err);
+                doc.deleted.should.equal(true);
+                should.not.exist(doc.deletedAt);
+                done();
+            });
+        });
+    });
+
+    it("restore() -> should set deleted:false", function (done) {
+        Test1.findOne({name: 'Puffy1'}, function (err, puffy) {
+            should.not.exist(err);
+
+            puffy.restore(function (err, success) {
+                if (err) {
+                    throw err;
+                }
+                success.deleted.should.equal(false);
+                done();
+            });
+        });
+    });
 });
 
 describe("mongoose_delete with options: { deletedAt : true }", function () {
 
-    var Test2Schema = new Schema({ name: String }, { collection: 'mongoose_delete_test2' });
-    Test2Schema.plugin(mongoose_delete, { deletedAt : true });
+    var Test2Schema = new Schema({name: String}, {collection: 'mongoose_delete_test2'});
+    Test2Schema.plugin(mongoose_delete, {deletedAt: true});
     var Test2 = mongoose.model('Test2', Test2Schema);
+    var puffy1 = new Test2({name: 'Puffy1'});
+    var puffy2 = new Test2({name: 'Puffy2'});
 
     before(function (done) {
-        var puffy = new Test2({ name: 'Puffy' });
-
-        puffy.save(function () { done(); });
+        puffy1.save(function () {
+            puffy2.save(function () {
+                done();
+            });
+        });
     });
 
     after(function (done) {
-        mongoose.connection.db.dropCollection("mongoose_delete_test2", function () { done(); });
+        mongoose.connection.db.dropCollection("mongoose_delete_test2", function () {
+            done();
+        });
     });
 
     it("delete() -> should save 'deletedAt' key", function (done) {
-        Test2.findOne({ name: 'Puffy' }, function (err, puffy) {
+        Test2.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
 
             puffy.delete(function (err, success) {
-                if (err) { throw err; }
+                if (err) {
+                    throw err;
+                }
                 should.exist(success.deletedAt);
                 done();
             });
         });
     });
 
+    it("deleteById() -> should save 'deletedAt' key", function (done) {
+        Test2.deleteById(puffy2._id, function (err, documents) {
+            should.not.exist(err);
+            documents.ok.should.equal(1);
+            documents.n.should.equal(1);
+
+            Test2.findOne({name: 'Puffy2'}, function (err, doc) {
+                should.not.exist(err);
+                doc.deleted.should.equal(true);
+                should.exist(doc.deletedAt);
+                done();
+            });
+        });
+    });
+
     it("restore() -> should set deleted:false and delete deletedAt key", function (done) {
-        Test2.findOne({ name: 'Puffy' }, function (err, puffy) {
+        Test2.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
 
             puffy.restore(function (err, success) {
-                if (err) { throw err; }
+                if (err) {
+                    throw err;
+                }
                 success.deleted.should.equal(false);
                 should.not.exist(success.deletedAt);
                 done();
@@ -184,66 +282,97 @@ describe("mongoose_delete with options: { deletedAt : true }", function () {
 
 describe("mongoose_delete with options: { deletedAt : true }, using option: typeKey", function () {
 
-  var Test2Schema = new Schema({ name: String }, { collection: 'mongoose_delete_test2', typeKey: '$type' });
-  Test2Schema.plugin(mongoose_delete, { deletedAt : true });
-  var Test2 = mongoose.model('Test2a', Test2Schema);
+    var Test2Schema = new Schema({name: String}, {collection: 'mongoose_delete_test2', typeKey: '$type'});
+    Test2Schema.plugin(mongoose_delete, {deletedAt: true});
+    var Test2 = mongoose.model('Test2a', Test2Schema);
+    var puffy1 = new Test2({name: 'Puffy1'});
+    var puffy2 = new Test2({name: 'Puffy2'});
 
-  before(function (done) {
-    var puffy = new Test2({ name: 'Puffy' });
-
-    puffy.save(function () { done(); });
-  });
-
-  after(function (done) {
-    mongoose.connection.db.dropCollection("mongoose_delete_test2", function () { done(); });
-  });
-
-  it("delete() -> should save 'deletedAt' key", function (done) {
-    Test2.findOne({ name: 'Puffy' }, function (err, puffy) {
-      should.not.exist(err);
-
-      puffy.delete(function (err, success) {
-        if (err) { throw err; }
-        should.exist(success.deletedAt);
-        done();
-      });
+    before(function (done) {
+        puffy1.save(function () {
+            puffy2.save(function () {
+                done();
+            });
+        });
     });
-  });
 
-  it("restore() -> should set deleted:false and delete deletedAt key", function (done) {
-    Test2.findOne({ name: 'Puffy' }, function (err, puffy) {
-      should.not.exist(err);
-
-      puffy.restore(function (err, success) {
-        if (err) { throw err; }
-        success.deleted.should.equal(false);
-        should.not.exist(success.deletedAt);
-        done();
-      });
+    after(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test2", function () {
+            done();
+        });
     });
-  });
+
+    it("delete() -> should save 'deletedAt' key", function (done) {
+        Test2.findOne({name: 'Puffy1'}, function (err, puffy) {
+            should.not.exist(err);
+
+            puffy.delete(function (err, success) {
+                if (err) {
+                    throw err;
+                }
+                should.exist(success.deletedAt);
+                done();
+            });
+        });
+    });
+
+    it("deleteById() -> should save 'deletedAt' key", function (done) {
+        Test2.deleteById(puffy2._id, function (err, documents) {
+            should.not.exist(err);
+            documents.ok.should.equal(1);
+            documents.n.should.equal(1);
+
+            Test2.findOne({name: 'Puffy2'}, function (err, doc) {
+                should.not.exist(err);
+                doc.deleted.should.equal(true);
+                should.exist(doc.deletedAt);
+                done();
+            });
+        });
+    });
+
+    it("restore() -> should set deleted:false and delete deletedAt key", function (done) {
+        Test2.findOne({name: 'Puffy1'}, function (err, puffy) {
+            should.not.exist(err);
+
+            puffy.restore(function (err, success) {
+                if (err) {
+                    throw err;
+                }
+                success.deleted.should.equal(false);
+                should.not.exist(success.deletedAt);
+                done();
+            });
+        });
+    });
 });
 
 describe("mongoose_delete with options: { deletedBy : true }", function () {
 
-    var Test3Schema = new Schema({ name: String }, { collection: 'mongoose_delete_test3' });
-    Test3Schema.plugin(mongoose_delete, { deletedBy : true });
+    var Test3Schema = new Schema({name: String}, {collection: 'mongoose_delete_test3'});
+    Test3Schema.plugin(mongoose_delete, {deletedBy: true});
     var Test3 = mongoose.model('Test3', Test3Schema);
+    var puffy1 = new Test3({name: 'Puffy1'});
+    var puffy2 = new Test3({name: 'Puffy2'});
 
     before(function (done) {
-        var puffy = new Test3({ name: 'Puffy' });
-
-        puffy.save(function () { done(); });
+        puffy1.save(function () {
+            puffy2.save(function () {
+                done();
+            });
+        });
     });
 
     after(function (done) {
-        mongoose.connection.db.dropCollection("mongoose_delete_test3", function () { done(); });
+        mongoose.connection.db.dropCollection("mongoose_delete_test3", function () {
+            done();
+        });
     });
 
     var id = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
 
-    it("delete() -> should save deletedBy key", function (done) {
-        Test3.findOne({ name: 'Puffy' }, function (err, puffy) {
+    it("delete() -> should save 'deletedBy' key", function (done) {
+        Test3.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
 
             puffy.delete(id, function (err, success) {
@@ -255,12 +384,29 @@ describe("mongoose_delete with options: { deletedBy : true }", function () {
         });
     });
 
-    it("restore() -> should set deleted:false and delete deletedBy key", function (done) {
-        Test3.findOne({ name: 'Puffy' }, function (err, puffy) {
+    it("deleteById() -> should save `deletedBy` key", function (done) {
+        Test3.deleteById(puffy2._id, id, function (err, documents) {
+            should.not.exist(err);
+            documents.ok.should.equal(1);
+            documents.n.should.equal(1);
+
+            Test3.findOne({name: 'Puffy2'}, function (err, doc) {
+                should.not.exist(err);
+                doc.deleted.should.equal(true);
+                doc.deletedBy.toString().should.equal(id.toString());
+                done();
+            });
+        });
+    });
+
+    it("restore() -> should set deleted:false and delete `deletedBy` key", function (done) {
+        Test3.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
 
             puffy.restore(function (err, success) {
-                if (err) { throw err; }
+                if (err) {
+                    throw err;
+                }
                 success.deleted.should.equal(false);
                 should.not.exist(success.deletedBy);
                 done();
@@ -271,69 +417,30 @@ describe("mongoose_delete with options: { deletedBy : true }", function () {
 
 describe("mongoose_delete with options: { deletedBy : true }, using option: typeKey", function () {
 
-  var Test3Schema = new Schema({ name: String }, { collection: 'mongoose_delete_test3', typeKey: '$type' });
-  Test3Schema.plugin(mongoose_delete, { deletedBy : true });
-  var Test3 = mongoose.model('Test3a', Test3Schema);
-
-  before(function (done) {
-    var puffy = new Test3({ name: 'Puffy' });
-
-    puffy.save(function () { done(); });
-  });
-
-  after(function (done) {
-    mongoose.connection.db.dropCollection("mongoose_delete_test3", function () { done(); });
-  });
-
-  var id = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
-
-  it("delete() -> should save deletedBy key", function (done) {
-    Test3.findOne({ name: 'Puffy' }, function (err, puffy) {
-      should.not.exist(err);
-
-      puffy.delete(id, function (err, success) {
-        should.not.exist(err);
-
-        success.deletedBy.should.equal(id);
-        done();
-      });
-    });
-  });
-
-  it("restore() -> should set deleted:false and delete deletedBy key", function (done) {
-    Test3.findOne({ name: 'Puffy' }, function (err, puffy) {
-      should.not.exist(err);
-
-      puffy.restore(function (err, success) {
-        if (err) { throw err; }
-        success.deleted.should.equal(false);
-        should.not.exist(success.deletedBy);
-        done();
-      });
-    });
-  });
-});
-
-describe("mongoose_delete with options: { deletedBy : true, deletedByType: String }", function () {
-
-    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
-    TestSchema.plugin(mongoose_delete, { deletedBy : true, deletedByType: String });
-    var Test = mongoose.model('TestDeletedByType', TestSchema);
+    var Test3Schema = new Schema({name: String}, {collection: 'mongoose_delete_test3', typeKey: '$type'});
+    Test3Schema.plugin(mongoose_delete, {deletedBy: true});
+    var Test3 = mongoose.model('Test3a', Test3Schema);
+    var puffy1 = new Test3({name: 'Puffy1'});
+    var puffy2 = new Test3({name: 'Puffy2'});
 
     before(function (done) {
-        var puffy = new Test({ name: 'Puffy' });
-
-        puffy.save(function () { done(); });
+        puffy1.save(function () {
+            puffy2.save(function () {
+                done();
+            });
+        });
     });
 
     after(function (done) {
-        mongoose.connection.db.dropCollection("mongoose_delete_test", function () { done(); });
+        mongoose.connection.db.dropCollection("mongoose_delete_test3", function () {
+            done();
+        });
     });
 
-    var id = "custom_user_id_12345678";
+    var id = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
 
-    it("delete() -> should save deletedBy key", function (done) {
-        Test.findOne({ name: 'Puffy' }, function (err, puffy) {
+    it("delete() -> should save `deletedBy` key", function (done) {
+        Test3.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
 
             puffy.delete(id, function (err, success) {
@@ -345,12 +452,97 @@ describe("mongoose_delete with options: { deletedBy : true, deletedByType: Strin
         });
     });
 
+    it("deleteById() -> should save deletedBy key", function (done) {
+        Test3.deleteById(puffy2._id, id, function (err, documents) {
+            should.not.exist(err);
+            documents.ok.should.equal(1);
+            documents.n.should.equal(1);
+
+            Test3.findOne({name: 'Puffy2'}, function (err, doc) {
+                should.not.exist(err);
+                doc.deleted.should.equal(true);
+                doc.deletedBy.toString().should.equal(id.toString());
+                done();
+            });
+        });
+    });
+
     it("restore() -> should set deleted:false and delete deletedBy key", function (done) {
-        Test.findOne({ name: 'Puffy' }, function (err, puffy) {
+        Test3.findOne({name: 'Puffy1'}, function (err, puffy) {
             should.not.exist(err);
 
             puffy.restore(function (err, success) {
-                if (err) { throw err; }
+                if (err) {
+                    throw err;
+                }
+                success.deleted.should.equal(false);
+                should.not.exist(success.deletedBy);
+                done();
+            });
+        });
+    });
+});
+
+describe("mongoose_delete with options: { deletedBy : true, deletedByType: String }", function () {
+
+    var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
+    TestSchema.plugin(mongoose_delete, {deletedBy: true, deletedByType: String});
+    var Test = mongoose.model('TestDeletedByType', TestSchema);
+    var puffy1 = new Test({name: 'Puffy1'});
+    var puffy2 = new Test({name: 'Puffy2'});
+
+    before(function (done) {
+        puffy1.save(function () {
+            puffy2.save(function () {
+                done();
+            });
+        });
+    });
+
+    after(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test", function () {
+            done();
+        });
+    });
+
+    var id = "custom_user_id_12345678";
+
+    it("delete() -> should save deletedBy key", function (done) {
+        Test.findOne({name: 'Puffy1'}, function (err, puffy) {
+            should.not.exist(err);
+
+            puffy.delete(id, function (err, success) {
+                should.not.exist(err);
+
+                success.deletedBy.should.equal(id);
+                done();
+            });
+        });
+    });
+
+    it("deleteById() -> should save deletedBy key", function (done) {
+        Test.deleteById(puffy2._id, id, function (err, documents) {
+            should.not.exist(err);
+            documents.ok.should.equal(1);
+            documents.n.should.equal(1);
+
+            Test.findOne({name: 'Puffy2'}, function (err, doc) {
+                should.not.exist(err);
+                doc.deleted.should.equal(true);
+                doc.deletedBy.should.equal(id);
+                done();
+            });
+        });
+    });
+
+    it("restore() -> should set deleted:false and delete deletedBy key", function (done) {
+        Test.findOne({name: 'Puffy1'}, function (err, puffy) {
+            should.not.exist(err);
+
+            puffy.restore(function (err, success) {
+                if (err) {
+                    throw err;
+                }
                 success.deleted.should.equal(false);
                 should.not.exist(success.deletedBy);
                 done();
@@ -360,20 +552,20 @@ describe("mongoose_delete with options: { deletedBy : true, deletedByType: Strin
 });
 
 describe("check not overridden static methods", function () {
-    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
+    var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
     TestSchema.plugin(mongoose_delete);
     var TestModel = mongoose.model('Test4', TestSchema);
 
     beforeEach(function (done) {
         TestModel.create(
             [
-                { name: 'Obi-Wan Kenobi', deleted: true},
-                { name: 'Darth Vader'},
-                { name: 'Luke Skywalker'}
+                {name: 'Obi-Wan Kenobi', deleted: true},
+                {name: 'Darth Vader'},
+                {name: 'Luke Skywalker'}
             ], done);
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         mongoose.connection.db.dropCollection("mongoose_delete_test", done);
     });
 
@@ -386,6 +578,20 @@ describe("check not overridden static methods", function () {
         });
     });
 
+    it("countDocuments() -> should return 3 documents", function (done) {
+        // INFO: countDocuments is added in mongoose 5.x
+        if (typeof TestModel.countDocuments === 'function') {
+            TestModel.countDocuments(function (err, count) {
+                should.not.exist(err);
+
+                count.should.equal(3);
+                done();
+            });
+        } else {
+            done();
+        }
+    });
+
     it("find() -> should return 3 documents", function (done) {
         TestModel.find(function (err, documents) {
             should.not.exist(err);
@@ -396,7 +602,7 @@ describe("check not overridden static methods", function () {
     });
 
     it("findOne() -> should return 1 deleted document", function (done) {
-        TestModel.findOne({ name: 'Obi-Wan Kenobi' }, function (err, doc) {
+        TestModel.findOne({name: 'Obi-Wan Kenobi'}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).not.to.be.null;
@@ -406,7 +612,7 @@ describe("check not overridden static methods", function () {
     });
 
     it("findOneAndUpdate() -> should find and update deleted document", function (done) {
-        TestModel.findOneAndUpdate({ name: 'Obi-Wan Kenobi' }, { name: 'Obi-Wan Kenobi Test'}, {new:true}, function (err, doc) {
+        TestModel.findOneAndUpdate({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {new: true}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).not.to.be.null;
@@ -416,7 +622,7 @@ describe("check not overridden static methods", function () {
     });
 
     it("update() -> should update deleted document", function (done) {
-        TestModel.update({ name: 'Obi-Wan Kenobi' }, { name: 'Obi-Wan Kenobi Test'}, function (err, doc) {
+        TestModel.update({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
@@ -427,20 +633,20 @@ describe("check not overridden static methods", function () {
 });
 
 describe("check overridden static methods: { overrideMethods: 'all' }", function () {
-    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
-    TestSchema.plugin(mongoose_delete, { overrideMethods: 'all' });
+    var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: 'all'});
     var TestModel = mongoose.model('Test5', TestSchema);
 
     beforeEach(function (done) {
         TestModel.create(
             [
-                { name: 'Obi-Wan Kenobi', deleted: true},
-                { name: 'Darth Vader'},
-                { name: 'Luke Skywalker', deleted: true}
+                {name: 'Obi-Wan Kenobi', deleted: true},
+                {name: 'Darth Vader'},
+                {name: 'Luke Skywalker', deleted: true}
             ], done);
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         mongoose.connection.db.dropCollection("mongoose_delete_test", done);
     });
 
@@ -499,7 +705,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("findOne() -> should not return 1 deleted document", function (done) {
-        TestModel.findOne({ name: 'Obi-Wan Kenobi' }, function (err, doc) {
+        TestModel.findOne({name: 'Obi-Wan Kenobi'}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).to.be.null;
@@ -508,7 +714,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("findOneDeleted() -> should return 1 deleted document", function (done) {
-        TestModel.findOneDeleted({ name: 'Obi-Wan Kenobi' }, function (err, doc) {
+        TestModel.findOneDeleted({name: 'Obi-Wan Kenobi'}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).not.to.be.null;
@@ -517,7 +723,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("findOneWithDeleted() -> should return 1 deleted document", function (done) {
-        TestModel.findOneWithDeleted({ name: 'Obi-Wan Kenobi' }, function (err, doc) {
+        TestModel.findOneWithDeleted({name: 'Obi-Wan Kenobi'}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).not.to.be.null;
@@ -526,7 +732,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("findOneWithDeleted() -> should return 1 not deleted document", function (done) {
-        TestModel.findOneWithDeleted({ name: 'Darth Vader' }, function (err, doc) {
+        TestModel.findOneWithDeleted({name: 'Darth Vader'}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).not.to.be.null;
@@ -535,7 +741,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("findOneAndUpdate() -> should not find and update deleted document", function (done) {
-        TestModel.findOneAndUpdate({ name: 'Obi-Wan Kenobi' }, { name: 'Obi-Wan Kenobi Test'}, {new:true}, function (err, doc) {
+        TestModel.findOneAndUpdate({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {new: true}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).to.be.null;
@@ -544,7 +750,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("findOneAndUpdateDeleted() -> should find and update deleted document", function (done) {
-        TestModel.findOneAndUpdateDeleted({ name: 'Obi-Wan Kenobi' }, { name: 'Obi-Wan Kenobi Test'}, {new:true}, function (err, doc) {
+        TestModel.findOneAndUpdateDeleted({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {new: true}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).not.to.be.null;
@@ -553,7 +759,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("findOneAndUpdateWithDeleted() -> should find and update deleted document", function (done) {
-        TestModel.findOneAndUpdateWithDeleted({ name: 'Obi-Wan Kenobi' }, { name: 'Obi-Wan Kenobi Test'}, {new:true}, function (err, doc) {
+        TestModel.findOneAndUpdateWithDeleted({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {new: true}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).not.to.be.null;
@@ -562,7 +768,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("findOneAndUpdateWithDeleted() -> should find and update not deleted document", function (done) {
-        TestModel.findOneAndUpdateWithDeleted({ name: 'Darth Vader' }, { name: 'Darth Vader Test'}, {new:true}, function (err, doc) {
+        TestModel.findOneAndUpdateWithDeleted({name: 'Darth Vader'}, {name: 'Darth Vader Test'}, {new: true}, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).not.to.be.null;
@@ -571,7 +777,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("update(conditions, update, options, callback) -> should not update deleted documents", function (done) {
-        TestModel.update({ }, { name: 'Luke Skywalker Test'}, { multi: true }, function (err, doc) {
+        TestModel.update({}, {name: 'Luke Skywalker Test'}, {multi: true}, function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
@@ -581,7 +787,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("update(conditions, update, options) -> should not update deleted documents", function (done) {
-        TestModel.update({ }, { name: 'Luke Skywalker Test'}, { multi: true }).exec(function (err, doc) {
+        TestModel.update({}, {name: 'Luke Skywalker Test'}, {multi: true}).exec(function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
@@ -591,7 +797,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("update(conditions, update, callback) -> should not update deleted documents", function (done) {
-        TestModel.update({ }, { name: 'Luke Skywalker Test'}, function (err, doc) {
+        TestModel.update({}, {name: 'Luke Skywalker Test'}, function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
@@ -601,7 +807,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("update(conditions, update) -> should not update deleted documents", function (done) {
-        TestModel.update({ }, { name: 'Luke Skywalker Test'}).exec(function (err, doc) {
+        TestModel.update({}, {name: 'Luke Skywalker Test'}).exec(function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
@@ -611,7 +817,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("updateDeleted() -> should update deleted document", function (done) {
-        TestModel.updateDeleted({ }, { name: 'Test 123'}, { multi: true }, function (err, doc) {
+        TestModel.updateDeleted({}, {name: 'Test 123'}, {multi: true}, function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
@@ -621,21 +827,19 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     });
 
     it("updateWithDeleted() -> should update all document", function (done) {
-
-        TestModel.updateWithDeleted({}, { name: 'Test 654'}, { multi: true },  function (err, doc) {
+        TestModel.updateWithDeleted({}, {name: 'Test 654'}, {multi: true}, function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
             doc.n.should.equal(3);
             done();
         });
-
     });
 });
 
 describe("check the existence of override static methods: { overrideMethods: true }", function () {
-    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
-    TestSchema.plugin(mongoose_delete, { overrideMethods: true });
+    var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: true});
     var TestModel = mongoose.model('Test6', TestSchema);
 
     it("count() -> method should exist", function (done) {
@@ -650,6 +854,21 @@ describe("check the existence of override static methods: { overrideMethods: tru
 
     it("countWithDeleted() -> method should exist", function (done) {
         expect(TestModel.countWithDeleted).to.exist;
+        done();
+    });
+
+    it("countDocuments() -> method should exist", function (done) {
+        expect(TestModel.countDocuments).to.exist;
+        done();
+    });
+
+    it("countDocumentsDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsDeleted).to.exist;
+        done();
+    });
+
+    it("countDocumentsWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsWithDeleted).to.exist;
         done();
     });
 
@@ -714,9 +933,9 @@ describe("check the existence of override static methods: { overrideMethods: tru
     });
 });
 
-describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'find', 'findOne', 'findOneAndUpdate', 'update'] }", function () {
-    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
-    TestSchema.plugin(mongoose_delete, { overrideMethods: ['testError', 'count', 'find', 'findOne', 'findOneAndUpdate', 'update'] });
+describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update'] }", function () {
+    var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update']});
     var TestModel = mongoose.model('Test7', TestSchema);
 
     it("testError() -> method should not exist", function (done) {
@@ -736,6 +955,21 @@ describe("check the existence of override static methods: { overrideMethods: ['t
 
     it("countWithDeleted() -> method should exist", function (done) {
         expect(TestModel.countWithDeleted).to.exist;
+        done();
+    });
+
+    it("countDocuments() -> method should exist", function (done) {
+        expect(TestModel.countDocuments).to.exist;
+        done();
+    });
+
+    it("countDocumentsDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsDeleted).to.exist;
+        done();
+    });
+
+    it("countDocumentsWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsWithDeleted).to.exist;
         done();
     });
 
@@ -801,8 +1035,8 @@ describe("check the existence of override static methods: { overrideMethods: ['t
 });
 
 describe("check the existence of override static methods: { overrideMethods: ['count', 'find'] }", function () {
-    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test' });
-    TestSchema.plugin(mongoose_delete, { overrideMethods: ['count', 'find'] });
+    var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: ['count', 'countDocuments', 'find']});
     var TestModel = mongoose.model('Test8', TestSchema);
 
     it("testError() -> method should not exist", function (done) {
@@ -822,6 +1056,21 @@ describe("check the existence of override static methods: { overrideMethods: ['c
 
     it("countWithDeleted() -> method should exist", function (done) {
         expect(TestModel.countWithDeleted).to.exist;
+        done();
+    });
+
+    it("countDocuments() -> method should exist", function (done) {
+        expect(TestModel.countDocuments).to.exist;
+        done();
+    });
+
+    it("countDocumentsDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsDeleted).to.exist;
+        done();
+    });
+
+    it("countDocumentsWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.countDocumentsWithDeleted).to.exist;
         done();
     });
 
@@ -887,20 +1136,20 @@ describe("check the existence of override static methods: { overrideMethods: ['c
 });
 
 describe("delete multiple documents", function () {
-    var TestSchema = new Schema({ name: String, side: Number }, { collection: 'mongoose_delete_test' });
-    TestSchema.plugin(mongoose_delete, { overrideMethods: 'all', deletedAt : true, deletedBy : true });
+    var TestSchema = new Schema({name: String, side: Number}, {collection: 'mongoose_delete_test'});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: 'all', deletedAt: true, deletedBy: true});
     var TestModel = mongoose.model('Test14', TestSchema);
 
     beforeEach(function (done) {
         TestModel.create(
             [
-                { name: 'Obi-Wan Kenobi', side: 0},
-                { name: 'Darth Vader', side: 1},
-                { name: 'Luke Skywalker', side: 0}
+                {name: 'Obi-Wan Kenobi', side: 0},
+                {name: 'Darth Vader', side: 1},
+                {name: 'Luke Skywalker', side: 0}
             ], done);
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         mongoose.connection.db.dropCollection("mongoose_delete_test", done);
     });
 
@@ -916,7 +1165,7 @@ describe("delete multiple documents", function () {
     });
 
     it("delete(query, cb) -> delete multiple documents with conditions", function (done) {
-        TestModel.delete({side:0}, function (err, documents) {
+        TestModel.delete({side: 0}, function (err, documents) {
             should.not.exist(err);
 
             documents.ok.should.equal(1);
@@ -930,7 +1179,7 @@ describe("delete multiple documents", function () {
     it("delete(query, deletedBy, cb) -> delete multiple documents with conditions and user ID", function (done) {
         var userId = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
 
-        TestModel.delete({side:1}, userId, function (err, documents) {
+        TestModel.delete({side: 1}, userId, function (err, documents) {
             should.not.exist(err);
 
             documents.ok.should.equal(1);
@@ -952,7 +1201,7 @@ describe("delete multiple documents", function () {
     });
 
     it("delete(query).exec() -> delete multiple documents with conditions", function (done) {
-        TestModel.delete({side:0}).exec(function (err, documents) {
+        TestModel.delete({side: 0}).exec(function (err, documents) {
             should.not.exist(err);
 
             documents.ok.should.equal(1);
@@ -965,7 +1214,7 @@ describe("delete multiple documents", function () {
     it("delete(query, deletedBy).exec() -> delete multiple documents with conditions and user ID", function (done) {
         var userId = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
 
-        TestModel.delete({side:1}, userId).exec(function (err, documents) {
+        TestModel.delete({side: 1}, userId).exec(function (err, documents) {
             should.not.exist(err);
 
             documents.ok.should.equal(1);
@@ -990,20 +1239,20 @@ describe("delete multiple documents", function () {
 });
 
 describe("delete multiple documents (no plugin options)", function () {
-    var TestSchema = new Schema({ name: String, side: Number }, { collection: 'mongoose_delete_test' });
+    var TestSchema = new Schema({name: String, side: Number}, {collection: 'mongoose_delete_test'});
     TestSchema.plugin(mongoose_delete);
     var TestModel = mongoose.model('Test13', TestSchema);
 
     beforeEach(function (done) {
         TestModel.create(
             [
-                { name: 'Obi-Wan Kenobi', side: 0},
-                { name: 'Darth Vader', side: 1},
-                { name: 'Luke Skywalker', side: 0}
+                {name: 'Obi-Wan Kenobi', side: 0},
+                {name: 'Darth Vader', side: 1},
+                {name: 'Luke Skywalker', side: 0}
             ], done);
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         mongoose.connection.db.dropCollection("mongoose_delete_test", done);
     });
 
@@ -1020,20 +1269,20 @@ describe("delete multiple documents (no plugin options)", function () {
 });
 
 describe("restore multiple documents", function () {
-    var TestSchema = new Schema({ name: String, side: Number }, { collection: 'mongoose_restore_test' });
-    TestSchema.plugin(mongoose_delete, { overrideMethods: 'all', deletedAt : true, deletedBy : true });
+    var TestSchema = new Schema({name: String, side: Number}, {collection: 'mongoose_restore_test'});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: 'all', deletedAt: true, deletedBy: true});
     var TestModel = mongoose.model('Test15', TestSchema);
 
     beforeEach(function (done) {
         TestModel.create(
             [
-                { name: 'Obi-Wan Kenobi', side: 0},
-                { name: 'Darth Vader', side: 1, deleted: true},
-                { name: 'Luke Skywalker', side: 0}
+                {name: 'Obi-Wan Kenobi', side: 0},
+                {name: 'Darth Vader', side: 1, deleted: true},
+                {name: 'Luke Skywalker', side: 0}
             ], done);
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         mongoose.connection.db.dropCollection("mongoose_restore_test", done);
     });
 
@@ -1049,7 +1298,7 @@ describe("restore multiple documents", function () {
     });
 
     it("restore(query, cb) -> restore multiple documents with conditions", function (done) {
-        TestModel.restore({side:0}, function (err, documents) {
+        TestModel.restore({side: 0}, function (err, documents) {
             should.not.exist(err);
 
             documents.ok.should.equal(1);
@@ -1071,7 +1320,7 @@ describe("restore multiple documents", function () {
     });
 
     it("restore(query).exec() -> restore multiple documents with conditions", function (done) {
-        TestModel.restore({side:0}).exec(function (err, documents) {
+        TestModel.restore({side: 0}).exec(function (err, documents) {
             should.not.exist(err);
 
             documents.ok.should.equal(1);
@@ -1084,20 +1333,20 @@ describe("restore multiple documents", function () {
 });
 
 describe("restore multiple documents (no plugin options)", function () {
-    var TestSchema = new Schema({ name: String, side: Number }, { collection: 'mongoose_restore_test' });
+    var TestSchema = new Schema({name: String, side: Number}, {collection: 'mongoose_restore_test'});
     TestSchema.plugin(mongoose_delete);
     var TestModel = mongoose.model('Test16', TestSchema);
 
     beforeEach(function (done) {
         TestModel.create(
             [
-                { name: 'Obi-Wan Kenobi', side: 0},
-                { name: 'Darth Vader', side: 1, deleted: true},
-                { name: 'Luke Skywalker', side: 0}
+                {name: 'Obi-Wan Kenobi', side: 0},
+                {name: 'Darth Vader', side: 1, deleted: true},
+                {name: 'Luke Skywalker', side: 0}
             ], done);
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         mongoose.connection.db.dropCollection("mongoose_restore_test", done);
     });
 
@@ -1115,28 +1364,28 @@ describe("restore multiple documents (no plugin options)", function () {
 
 describe("model validation on delete (default): { validateBeforeDelete: true }", function () {
     var TestSchema = new Schema({
-        name: { type: String, required: true }
-    }, { collection: 'mongoose_restore_test' });
+        name: {type: String, required: true}
+    }, {collection: 'mongoose_restore_test'});
     TestSchema.plugin(mongoose_delete);
     var TestModel = mongoose.model('Test17', TestSchema);
 
     beforeEach(function (done) {
         TestModel.create(
-          [
-              { name: 'Luke Skywalker'}
-          ], done);
+            [
+                {name: 'Luke Skywalker'}
+            ], done);
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         mongoose.connection.db.dropCollection("mongoose_restore_test", done);
     });
 
     it("delete() -> should raise ValidationError error", function (done) {
-        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+        TestModel.findOne({name: 'Luke Skywalker'}, function (err, luke) {
             should.not.exist(err);
             luke.name = "";
 
-            luke.delete(function (err, success) {
+            luke.delete(function (err) {
                 err.should.exist;
                 err.name.should.exist;
                 err.name.should.equal('ValidationError');
@@ -1146,11 +1395,11 @@ describe("model validation on delete (default): { validateBeforeDelete: true }",
     });
 
     it("delete() -> should not raise ValidationError error", function (done) {
-        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+        TestModel.findOne({name: 'Luke Skywalker'}, function (err, luke) {
             should.not.exist(err);
             luke.name = "Test Name";
 
-            luke.delete(function (err, success) {
+            luke.delete(function (err) {
                 should.not.exist(err);
                 done();
             });
@@ -1160,28 +1409,28 @@ describe("model validation on delete (default): { validateBeforeDelete: true }",
 
 describe("model validation on delete: { validateBeforeDelete: false }", function () {
     var TestSchema = new Schema({
-        name: { type: String, required: true }
-    }, { collection: 'mongoose_restore_test' });
-    TestSchema.plugin(mongoose_delete, { validateBeforeDelete: false });
+        name: {type: String, required: true}
+    }, {collection: 'mongoose_restore_test'});
+    TestSchema.plugin(mongoose_delete, {validateBeforeDelete: false});
     var TestModel = mongoose.model('Test18', TestSchema);
 
     beforeEach(function (done) {
         TestModel.create(
-          [
-              { name: 'Luke Skywalker'}
-          ], done);
+            [
+                {name: 'Luke Skywalker'}
+            ], done);
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         mongoose.connection.db.dropCollection("mongoose_restore_test", done);
     });
 
     it("delete() -> should not raise ValidationError error", function (done) {
-        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+        TestModel.findOne({name: 'Luke Skywalker'}, function (err, luke) {
             should.not.exist(err);
             luke.name = "";
 
-            luke.delete(function (err, success) {
+            luke.delete(function (err) {
                 should.not.exist(err);
                 done();
             });
@@ -1189,11 +1438,11 @@ describe("model validation on delete: { validateBeforeDelete: false }", function
     });
 
     it("delete() -> should not raise ValidationError error", function (done) {
-        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+        TestModel.findOne({name: 'Luke Skywalker'}, function (err, luke) {
             should.not.exist(err);
             luke.name = "Test Name";
 
-            luke.delete(function (err, success) {
+            luke.delete(function (err) {
                 should.not.exist(err);
                 done();
             });
@@ -1203,8 +1452,8 @@ describe("model validation on delete: { validateBeforeDelete: false }", function
 
 describe("mongoose_delete indexFields options", function () {
     it("all fields must have index: { indexFields: true }", function (done) {
-        var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_indexFields' });
-        TestSchema.plugin(mongoose_delete, { indexFields: true, deletedAt : true, deletedBy : true });
+        var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test_indexFields'});
+        TestSchema.plugin(mongoose_delete, {indexFields: true, deletedAt: true, deletedBy: true});
         var Test0 = mongoose.model('Test0_indexFields', TestSchema);
 
         expect(Test0.schema.paths.deleted._index).to.be.true;
@@ -1214,8 +1463,8 @@ describe("mongoose_delete indexFields options", function () {
     });
 
     it("all fields must have index: { indexFields: 'all' }", function (done) {
-        var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_indexFields' });
-        TestSchema.plugin(mongoose_delete, { indexFields: 'all', deletedAt : true, deletedBy : true });
+        var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test_indexFields'});
+        TestSchema.plugin(mongoose_delete, {indexFields: 'all', deletedAt: true, deletedBy: true});
         var Test0 = mongoose.model('Test1_indexFields', TestSchema);
 
         expect(Test0.schema.paths.deleted._index).to.be.true;
@@ -1225,8 +1474,8 @@ describe("mongoose_delete indexFields options", function () {
     });
 
     it("only 'deleted' field must have index: { indexFields: ['deleted'] }", function (done) {
-        var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_indexFields' });
-        TestSchema.plugin(mongoose_delete, { indexFields: ['deleted'], deletedAt : true, deletedBy : true });
+        var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test_indexFields'});
+        TestSchema.plugin(mongoose_delete, {indexFields: ['deleted'], deletedAt: true, deletedBy: true});
         var Test0 = mongoose.model('Test2_indexFields', TestSchema);
 
         expect(Test0.schema.paths.deleted._index).to.be.true;
@@ -1234,8 +1483,8 @@ describe("mongoose_delete indexFields options", function () {
     });
 
     it("only 'deletedAt' and 'deletedBy' fields must have index: { indexFields: ['deletedAt', 'deletedBy'] }", function (done) {
-        var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_indexFields' });
-        TestSchema.plugin(mongoose_delete, { indexFields: ['deletedAt', 'deletedBy'], deletedAt : true, deletedBy : true });
+        var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test_indexFields'});
+        TestSchema.plugin(mongoose_delete, {indexFields: ['deletedAt', 'deletedBy'], deletedAt: true, deletedBy: true});
         var Test0 = mongoose.model('Test3_indexFields', TestSchema);
 
         expect(Test0.schema.paths.deleted._index).to.be.false;

@@ -1,3 +1,14 @@
+## [v0.5.0]
+> December 10, 2018
+
+- Add support to mongoose 5.x (@joelmukuthu, @gforge)
+- Add `deleteById` static method #16
+- Add `countDocuments` method with related override methods (only for v5 Mongoose) #45
+- Upgrade all `devDependencies` to latest versions
+- Setup `.travis.yml` to test plugin on Node: 10, 9, 8, 7, 6, 5, 4
+- Setup `.travis.yml` to use `coveralls@3.0.2`
+- Add additional tests
+
 ## [v0.4.0]
 > July 10, 2016
 
