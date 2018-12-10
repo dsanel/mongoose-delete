@@ -1,6 +1,6 @@
 {
   "name": "mongoose-delete",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Mongoose soft delete plugin",
   "author": "Sanel Deljkic <dsanel@gmail.com> (http://dsanel.github.io/)",
   "main": "index.js",
