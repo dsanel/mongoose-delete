@@ -77,8 +77,8 @@ function createSchemaObject (typeKey, typeValue, options) {
 }
 
 module.exports = function (schema, options) {
-    options = options || {};
-    var indexFields = parseIndexFields(options)
+    var indexFields = parseIndexFields(options);
+    options = Object.assign({}, indexFields, options);
 
     var typeKey = schema.options.typeKey;
 
