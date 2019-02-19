@@ -101,7 +101,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update'];
+        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'updateOne'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -212,7 +212,7 @@ module.exports = function (schema, options) {
         if (this.updateWithDeleted) {
             return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
         } else {
-            return this.update(conditions, doc, { multi: true }, callback);
+            return this.updateOne(conditions, doc, { multi: true }, callback);
         }
     };
 
@@ -251,7 +251,7 @@ module.exports = function (schema, options) {
         if (this.updateWithDeleted) {
             return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
         } else {
-            return this.update(conditions, doc, { multi: true }, callback);
+            return this.updateOne(conditions, doc, { multi: true }, callback);
         }
     };
 };
