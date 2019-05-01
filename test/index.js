@@ -7,6 +7,8 @@ var mongoose_delete = require('../');
 
 before(function (done) {
     mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test', {useNewUrlParser: true});
+    mongoose.set('useCreateIndex', true);
+    mongoose.set('useFindAndModify', false);
     done();
 });
 
@@ -622,7 +624,7 @@ describe("check not overridden static methods", function () {
     });
 
     it("update() -> should update deleted document", function (done) {
-        TestModel.update({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, function (err, doc) {
+        TestModel.updateMany({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
