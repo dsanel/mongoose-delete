@@ -131,7 +131,11 @@ module.exports = function (schema, options) {
                 }
 
                 schema.statics[method] = function () {
-                    return Model[modelMethodName].apply(this, arguments).where('deleted').ne(true);
+                    var query = Model[modelMethodName].apply(this, arguments);
+                    if (!arguments[2] || arguments[2].withDeleted !== true) {
+                        query.where('deleted').ne(true);
+                    }
+                    return query;
                 };
                 schema.statics[method + 'Deleted'] = function () {
                     return Model[modelMethodName].apply(this, arguments).where('deleted').ne(false);

@@ -219,6 +219,18 @@ Pet.findWithDeleted(function (err, documents) {
 
 ```
 
+### Populate deleted documents if overrideMethods is distribute
+
+We have the options `withDeleted` that can be pass to the populate() function.
+
+```
+Pet.find({})
+  .populate({ path: 'country', options: { withDeleted: true } })
+  .exec(function (err, documents) {
+  // will also return DELETED country documents
+});
+```
+
 ### Disable model validation on delete
 
 ```javascript

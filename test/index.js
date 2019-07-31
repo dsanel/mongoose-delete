@@ -1238,6 +1238,59 @@ describe("delete multiple documents", function () {
     });
 });
 
+describe("mongoose_delete find method overridden with populate", function () {
+    var Test11Schema = new Schema({ name: String });
+     Test11Schema.plugin(mongoose_delete, { overrideMethods: 'all' });
+    var Test11 = mongoose.model('Test11', Test11Schema);
+
+    var Test22Schema = new Schema(
+      { name: String ,
+      test: { type: Schema.Types.ObjectId, ref: 'Test11' }
+    });
+    Test22Schema.plugin(mongoose_delete, { overrideMethods: 'all' });
+    var Test22 = mongoose.model('Test22', Test22Schema);
+
+    before(function (done) {
+      const test = new Test11({ name: 'Sample' });
+      test.save(function () {
+        var puffy = new Test22({ name: 'SampleObject', test: test.id });
+        puffy.save(function () {
+          test.delete(done);
+        });
+      });
+    });
+
+    after(function (done) {
+      mongoose.connection.db.dropCollection("test11", done);
+    });
+
+    after(function (done) {
+      mongoose.connection.db.dropCollection("test22", done);
+    });
+
+    it("populate() -> should not return deleted sub-document", function (done) {
+        Test22
+          .findOne({ name: 'SampleObject' })
+          .populate({ path: 'test' })
+          .exec(function (err, document) {
+            should.not.exist(err);
+            expect(document.test).to.be.null;
+            done();
+          });
+    });
+
+    it("populate() + withDeleted options -> should  return the deleted sub-document", function (done) {
+      Test22
+        .findOne({ name: 'SampleObject' })
+        .populate({ path: 'test', options: { withDeleted: true } })
+        .exec(function (err, document) {
+          should.not.exist(err);
+          document.test.deleted.should.equal(true);
+          done();
+        });
+    });
+});
+
 describe("delete multiple documents (no plugin options)", function () {
     var TestSchema = new Schema({name: String, side: Number}, {collection: 'mongoose_delete_test'});
     TestSchema.plugin(mongoose_delete);
