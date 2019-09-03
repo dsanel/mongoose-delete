@@ -6,6 +6,7 @@
 - Upgrade all `devDependencies` to latest versions
 - Fix security vulnerabilities in dependencies
 - Add additional tests for `updateMany`, `countDocuments`, `use$neOperator`
+- Setup `.travis.yml` to test plugin on Node: 12, 11, 10, 9, 8, 7, 6, 5, 4
 
 ## [v0.5.0]
 > December 10, 2018
