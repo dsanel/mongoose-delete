@@ -14,10 +14,11 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
   - [Add __deletedBy__ key to record who deleted document](#who-has-deleted-the-data)
   - Restore deleted documents using __restore__ method
   - [Bulk delete and restore](#bulk-delete-and-restore)
-  - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, countDocuments, find, findOne, findOneAndUpdate, update__)
+  - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, countDocuments, find, findOne, findOneAndUpdate, update, updateMany__)
   - [For overridden methods we have two additional methods](#method-overridden): __methodDeleted__ and __methodWithDeleted__
   - [Disable model validation on delete](#disable-model-validation-on-delete)
   - [Option to create index on delete fields](#create-index-on-fields) (__deleted__, __deletedAt__, __deletedBy__)
+  - Option to disable use of `$ne` operator using `{use$neOperator: false}`. Before you start to use this option please check [#50](https://github.com/dsanel/mongoose-delete/issues/50).  
 
 ## Installation
 Install using [npm](https://npmjs.org)
@@ -174,10 +175,12 @@ We have the option to override all standard methods or only specific methods. Ov
 | only not deleted documents | only deleted documents  | all documents               |
 |----------------------------|-------------------------|-----------------------------|
 | count()                    | countDeleted            | countWithDeleted            |
+| countDocuments()           | countDocumentsDeleted   | countDocumentsWithDeleted   |
 | find()                     | findDeleted             | findWithDeleted             |
 | findOne()                  | findOneDeleted          | findOneWithDeleted          |
 | findOneAndUpdate()         | findOneAndUpdateDeleted | findOneAndUpdateWithDeleted |
 | update()                   | updateDeleted           | updateWithDeleted           |
+| updateMany()               | updateManyDeleted       | updateManyWithDeleted       |
 
 ### Examples how to override one or multiple methods
 

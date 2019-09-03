@@ -1,3 +1,12 @@
+## [v0.5.1]
+> September 3, 2019
+
+- Add option to disable use of `$ne` operator using `{use$neOperator: false}` (@bdelville, @gabzim) #50
+- Fix Mongoose DeprecationWarning: collection.update is deprecated (@cardimajs, @jebarjonet)
+- Upgrade all `devDependencies` to latest versions
+- Fix security vulnerabilities in dependencies
+- Add additional tests for `updateMany`, `countDocuments`, `use$neOperator`
+
 ## [v0.5.0]
 > December 10, 2018
 

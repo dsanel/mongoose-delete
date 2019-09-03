@@ -5,7 +5,7 @@ var mongoose = require('mongoose'),
 
 /**
  * This code is taken from official mongoose repository
- * https://github.com/Automattic/mongoose/blob/master/lib/query.js#L1996-L2018
+ * https://github.com/Automattic/mongoose/blob/master/lib/query.js#L3847-L3873
  */
 /* istanbul ignore next */
 function parseUpdateArguments (conditions, doc, options, callback) {
@@ -78,10 +78,11 @@ function createSchemaObject (typeKey, typeValue, options) {
 
 module.exports = function (schema, options) {
     options = options || {};
-    var indexFields = parseIndexFields(options)
+    var indexFields = parseIndexFields(options);
 
     var typeKey = schema.options.typeKey;
-
+    var mongooseMajorVersion = +mongoose.version[0]; // 4, 5...
+    var mainUpdateMethod = mongooseMajorVersion < 5 ? 'update' : 'updateMany';
     schema.add({ deleted: createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted }) });
 
     if (options.deletedAt === true) {
@@ -90,6 +91,11 @@ module.exports = function (schema, options) {
 
     if (options.deletedBy === true) {
         schema.add({ deletedBy: createSchemaObject(typeKey, options.deletedByType || Schema.Types.ObjectId, { index: indexFields.deletedBy }) });
+    }
+
+    var use$neOperator = true;
+    if (options.use$neOperator !== undefined && typeof options.use$neOperator === "boolean") {
+        use$neOperator = options.use$neOperator;
     }
 
     schema.pre('save', function (next) {
@@ -101,7 +107,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update'];
+        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateMany'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -126,15 +132,23 @@ module.exports = function (schema, options) {
 
                 // countDocuments do not exist in Mongoose v4
                 /* istanbul ignore next */
-                if (method === 'countDocuments' && typeof Model.countDocuments !== 'function') {
+                if (mongooseMajorVersion < 5 && method === 'countDocuments' && typeof Model.countDocuments !== 'function') {
                     modelMethodName = 'count';
                 }
 
                 schema.statics[method] = function () {
-                    return Model[modelMethodName].apply(this, arguments).where('deleted').ne(true);
+                    if (use$neOperator) {
+                        return Model[modelMethodName].apply(this, arguments).where('deleted').ne(true);
+                    } else {
+                        return Model[modelMethodName].apply(this, arguments).where({deleted: false});
+                    }
                 };
                 schema.statics[method + 'Deleted'] = function () {
-                    return Model[modelMethodName].apply(this, arguments).where('deleted').ne(false);
+                    if (use$neOperator) {
+                        return Model[modelMethodName].apply(this, arguments).where('deleted').ne(false);
+                    } else {
+                        return Model[modelMethodName].apply(this, arguments).where({deleted: true});
+                    }
                 };
                 schema.statics[method + 'WithDeleted'] = function () {
                     return Model[modelMethodName].apply(this, arguments);
@@ -143,7 +157,11 @@ module.exports = function (schema, options) {
                 schema.statics[method] = function () {
                     var args = parseUpdateArguments.apply(undefined, arguments);
 
-                    args[0].deleted = {'$ne': true};
+                    if (use$neOperator) {
+                        args[0].deleted = {'$ne': true};
+                    } else {
+                        args[0].deleted = false;
+                    }
 
                     return Model[method].apply(this, args);
                 };
@@ -151,7 +169,11 @@ module.exports = function (schema, options) {
                 schema.statics[method + 'Deleted'] = function () {
                     var args = parseUpdateArguments.apply(undefined, arguments);
 
-                    args[0].deleted = {'$ne': false};
+                    if (use$neOperator) {
+                        args[0].deleted = {'$ne': false};
+                    } else {
+                        args[0].deleted = true;
+                    }
 
                     return Model[method].apply(this, args);
                 };
@@ -165,8 +187,8 @@ module.exports = function (schema, options) {
 
     schema.methods.delete = function (deletedBy, cb) {
         if (typeof deletedBy === 'function') {
-          cb = deletedBy
-          deletedBy = null
+          cb = deletedBy;
+          deletedBy = null;
         }
 
         this.deleted = true;
@@ -212,7 +234,7 @@ module.exports = function (schema, options) {
         if (this.updateWithDeleted) {
             return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
         } else {
-            return this.update(conditions, doc, { multi: true }, callback);
+            return this[mainUpdateMethod](conditions, doc, { multi: true }, callback);
         }
     };
 
@@ -251,7 +273,7 @@ module.exports = function (schema, options) {
         if (this.updateWithDeleted) {
             return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
         } else {
-            return this.update(conditions, doc, { multi: true }, callback);
+            return this[mainUpdateMethod](conditions, doc, { multi: true }, callback);
         }
     };
 };

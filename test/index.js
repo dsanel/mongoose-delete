@@ -7,6 +7,10 @@ var mongoose_delete = require('../');
 
 before(function (done) {
     mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test', {useNewUrlParser: true});
+    if (+mongoose.version[0] >= 5) {
+        mongoose.set('useCreateIndex', true);
+        mongoose.set('useFindAndModify', false);
+    }
     done();
 });
 
@@ -630,6 +634,16 @@ describe("check not overridden static methods", function () {
             done();
         });
     });
+
+    it("updateMany() -> should update deleted document", function (done) {
+        TestModel.updateMany({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            done();
+        });
+    });
 });
 
 describe("check overridden static methods: { overrideMethods: 'all' }", function () {
@@ -659,6 +673,15 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
         });
     });
 
+    it("countDocuments() -> should return 1 documents", function (done) {
+        TestModel.countDocuments(function (err, count) {
+            should.not.exist(err);
+
+            count.should.equal(1);
+            done();
+        });
+    });
+
     it("countDeleted() -> should return 2 deleted documents", function (done) {
         TestModel.countDeleted(function (err, count) {
             should.not.exist(err);
@@ -668,8 +691,26 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
         });
     });
 
+    it("countDocumentsDeleted() -> should return 2 deleted documents", function (done) {
+        TestModel.countDocumentsDeleted(function (err, count) {
+            should.not.exist(err);
+
+            count.should.equal(2);
+            done();
+        });
+    });
+
     it("countWithDeleted() -> should return 3 documents", function (done) {
         TestModel.countWithDeleted(function (err, count) {
+            should.not.exist(err);
+
+            count.should.equal(3);
+            done();
+        });
+    });
+
+    it("countDocumentsWithDeleted() -> should return 3 documents", function (done) {
+        TestModel.countDocumentsWithDeleted(function (err, count) {
             should.not.exist(err);
 
             count.should.equal(3);
@@ -786,8 +827,28 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
         });
     });
 
+    it("updateMany(conditions, update, options, callback) -> should not update deleted documents", function (done) {
+        TestModel.updateMany({}, {name: 'Luke Skywalker Test'}, {multi: true}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            done();
+        });
+    });
+
     it("update(conditions, update, options) -> should not update deleted documents", function (done) {
         TestModel.update({}, {name: 'Luke Skywalker Test'}, {multi: true}).exec(function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            done();
+        });
+    });
+
+    it("updateMany(conditions, update, options) -> should not update deleted documents", function (done) {
+        TestModel.updateMany({}, {name: 'Luke Skywalker Test'}, {multi: true}).exec(function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
@@ -806,8 +867,28 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
         });
     });
 
+    it("updateMany(conditions, update, callback) -> should not update deleted documents", function (done) {
+        TestModel.updateMany({}, {name: 'Luke Skywalker Test'}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            done();
+        });
+    });
+
     it("update(conditions, update) -> should not update deleted documents", function (done) {
         TestModel.update({}, {name: 'Luke Skywalker Test'}).exec(function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            done();
+        });
+    });
+
+    it("updateMany(conditions, update) -> should not update deleted documents", function (done) {
+        TestModel.updateMany({}, {name: 'Luke Skywalker Test'}).exec(function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
@@ -826,8 +907,28 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
         });
     });
 
+    it("updateManyDeleted() -> should update deleted document", function (done) {
+        TestModel.updateManyDeleted({}, {name: 'Test 123'}, {multi: true}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(2);
+            done();
+        });
+    });
+
     it("updateWithDeleted() -> should update all document", function (done) {
         TestModel.updateWithDeleted({}, {name: 'Test 654'}, {multi: true}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(3);
+            done();
+        });
+    });
+
+    it("updateManyWithDeleted() -> should update all document", function (done) {
+        TestModel.updateManyWithDeleted({}, {name: 'Test 654'}, {multi: true}, function (err, doc) {
             should.not.exist(err);
 
             doc.ok.should.equal(1);
@@ -1491,5 +1592,63 @@ describe("mongoose_delete indexFields options", function () {
         expect(Test0.schema.paths.deletedAt._index).to.be.true;
         expect(Test0.schema.paths.deletedBy._index).to.be.true;
         done();
+    });
+});
+
+describe("check usage of $ne operator", function () {
+    var TestRawSchema = new Schema({name: String, deleted: Boolean}, {collection: 'mongoose_delete_test_ne'});
+    var TestRawModel = mongoose.model('TestNeRaw', TestRawSchema);
+
+    var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test_ne'});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: 'all', use$neOperator: false});
+    var TestModel = mongoose.model('Test55', TestSchema);
+
+    before(function (done) {
+        TestRawModel.create(
+            [
+                {name: 'One'},
+                {name: 'Two', deleted: true},
+                {name: 'Three', deleted: false}
+            ], done);
+    });
+
+    after(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test_ne", done);
+    });
+
+    it("count() -> should return 1 documents", function (done) {
+        TestModel.count(function (err, count) {
+            should.not.exist(err);
+
+            count.should.equal(1);
+            done();
+        });
+    });
+
+    it("countDeleted() -> should return 1 deleted documents", function (done) {
+        TestModel.countDeleted(function (err, count) {
+            should.not.exist(err);
+
+            count.should.equal(1);
+            done();
+        });
+    });
+
+    it("find() -> should return 1 documents", function (done) {
+        TestModel.find(function (err, documents) {
+            should.not.exist(err);
+
+            documents.length.should.equal(1);
+            done();
+        });
+    });
+
+    it("findDeleted() -> should return 1 documents", function (done) {
+        TestModel.findDeleted(function (err, documents) {
+            should.not.exist(err);
+
+            documents.length.should.equal(1);
+            done();
+        });
     });
 });
