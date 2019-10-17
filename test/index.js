@@ -560,13 +560,23 @@ describe("check not overridden static methods", function () {
     TestSchema.plugin(mongoose_delete);
     var TestModel = mongoose.model('Test4', TestSchema);
 
+    var testModels;
+
     beforeEach(function (done) {
         TestModel.create(
             [
                 {name: 'Obi-Wan Kenobi', deleted: true},
                 {name: 'Darth Vader'},
-                {name: 'Luke Skywalker'}
-            ], done);
+                {name: 'Luke Skywalker', deleted: true}
+            ], (err, res) => {
+                if (err) {
+                    done(err);
+                }
+                else {
+                    testModels = res;
+                    done();
+                }
+            });
     });
 
     afterEach(function (done) {
@@ -615,6 +625,16 @@ describe("check not overridden static methods", function () {
         });
     });
 
+    it("findById() -> should return 1 deleted document", function (done) {
+        TestModel.findById(testModels[0]._id, function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc).not.to.be.null;
+            doc.deleted.should.equal(true);
+            done();
+        });
+    });
+
     it("findOneAndUpdate() -> should find and update deleted document", function (done) {
         TestModel.findOneAndUpdate({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {new: true}, function (err, doc) {
             should.not.exist(err);
@@ -651,13 +671,23 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
     TestSchema.plugin(mongoose_delete, {overrideMethods: 'all'});
     var TestModel = mongoose.model('Test5', TestSchema);
 
+    var testModels;
+
     beforeEach(function (done) {
         TestModel.create(
             [
                 {name: 'Obi-Wan Kenobi', deleted: true},
                 {name: 'Darth Vader'},
                 {name: 'Luke Skywalker', deleted: true}
-            ], done);
+            ], (err, res) => {
+                if (err) {
+                    done(err);
+                }
+                else {
+                    testModels = res;
+                    done();
+                }
+            });
     });
 
     afterEach(function (done) {
@@ -774,6 +804,42 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
 
     it("findOneWithDeleted() -> should return 1 not deleted document", function (done) {
         TestModel.findOneWithDeleted({name: 'Darth Vader'}, function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc).not.to.be.null;
+            done();
+        });
+    });
+
+    it("findById() -> should not return 1 deleted document", function (done) {
+        TestModel.findById(testModels[0]._id, function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc).to.be.null;
+            done();
+        });
+    });
+
+    it("findByIdDeleted() -> should return 1 deleted document", function (done) {
+        TestModel.findByIdDeleted(testModels[0]._id, function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc).not.to.be.null;
+            done();
+        });
+    });
+
+    it("findByIdWithDeleted() -> should return 1 deleted document", function (done) {
+        TestModel.findOneWithDeleted(testModels[0]._id, function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc).not.to.be.null;
+            done();
+        });
+    });
+
+    it("findByIdWithDeleted() -> should return 1 not deleted document", function (done) {
+        TestModel.findOneWithDeleted(testModels[1]._id, function (err, doc) {
             should.not.exist(err);
 
             expect(doc).not.to.be.null;
@@ -1003,8 +1069,18 @@ describe("check the existence of override static methods: { overrideMethods: tru
         done();
     });
 
-    it("findOneAndUpdate() -> method should exist", function (done) {
-        expect(TestModel.findOneAndUpdate).to.exist;
+    it("findById() -> method should exist", function (done) {
+        expect(TestModel.findById).to.exist;
+        done();
+    });
+
+    it("findByIdDeleted() -> method should exist", function (done) {
+        expect(TestModel.findByIdDeleted).to.exist;
+        done();
+    });
+
+    it("findByIdWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.findByIdWithDeleted).to.exist;
         done();
     });
 
@@ -1034,9 +1110,9 @@ describe("check the existence of override static methods: { overrideMethods: tru
     });
 });
 
-describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update'] }", function () {
+describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findById', 'findOneAndUpdate', 'update'] }", function () {
     var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
-    TestSchema.plugin(mongoose_delete, {overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update']});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findById', 'findOneAndUpdate', 'update']});
     var TestModel = mongoose.model('Test7', TestSchema);
 
     it("testError() -> method should not exist", function (done) {
@@ -1101,6 +1177,21 @@ describe("check the existence of override static methods: { overrideMethods: ['t
 
     it("findOneWithDeleted() -> method should exist", function (done) {
         expect(TestModel.findOneWithDeleted).to.exist;
+        done();
+    });
+
+    it("findById() -> method should exist", function (done) {
+        expect(TestModel.findById).to.exist;
+        done();
+    });
+
+    it("findByIdDeleted() -> method should exist", function (done) {
+        expect(TestModel.findByIdDeleted).to.exist;
+        done();
+    });
+
+    it("findByIdWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.findByIdWithDeleted).to.exist;
         done();
     });
 
@@ -1202,6 +1293,21 @@ describe("check the existence of override static methods: { overrideMethods: ['c
 
     it("findOneWithDeleted() -> method should exist", function (done) {
         expect(TestModel.findOneWithDeleted).to.not.exist;
+        done();
+    });
+    
+    it("findById() -> method should exist", function (done) {
+        expect(TestModel.findById).to.exist;
+        done();
+    });
+
+    it("findByIdDeleted() -> method should exist", function (done) {
+        expect(TestModel.findByIdDeleted).to.not.exist;
+        done();
+    });
+
+    it("findByIdWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.findByIdWithDeleted).to.not.exist;
         done();
     });
 

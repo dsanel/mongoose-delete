@@ -107,7 +107,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateMany'];
+        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findById', 'findOneAndUpdate', 'update', 'updateMany'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -127,7 +127,7 @@ module.exports = function (schema, options) {
         }
 
         finalList.forEach(function(method) {
-            if (['count', 'countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
+            if (['count', 'countDocuments', 'find', 'findOne', 'findById'].indexOf(method) > -1) {
                 var modelMethodName = method;
 
                 // countDocuments do not exist in Mongoose v4
