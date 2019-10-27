@@ -33,6 +33,6 @@
     "chai": "^4.2.0",
     "istanbul": "^0.4.5",
     "mocha": "5.x",
-    "mongoose": "^5"
+    "mongoose": ">=5.7.5"
   }
 }
