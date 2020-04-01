@@ -29,3 +29,5 @@ node_modules
 
 # OSX
 .DS_Store
+
+.nyc_output
