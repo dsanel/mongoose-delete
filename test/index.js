@@ -1652,3 +1652,94 @@ describe("check usage of $ne operator", function () {
         });
     });
 });
+
+describe("aggregate methods: { overrideMethods: ['aggregate'] }", function () {
+    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_aggregate' });
+    TestSchema.plugin(mongoose_delete, { overrideMethods: ['aggregate'] });
+
+    var TestModel = mongoose.model('Test5_Aggregate', TestSchema);
+
+    beforeEach(function (done) {
+        TestModel.create(
+          [
+              { name: 'Obi-Wan Kenobi', deleted: true },
+              { name: 'Darth Vader' },
+              { name: 'Luke Skywalker', deleted: true }
+          ], done);
+    });
+
+    afterEach(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_delete_test_aggregate", done);
+    });
+
+    it("aggregate([{$project : {name : 1} }]) -> should return 1 document", function (done) {
+        TestModel.aggregate([
+            {
+                $project : { name : 1 }
+            }
+        ], function (err, documents) {
+            should.not.exist(err);
+            documents.length.should.equal(1);
+            done();
+        });
+    });
+
+    it("aggregate([{$project : {name : 1} }]) -> should return 1 document (pipeline)", function (done) {
+        TestModel
+            .aggregate()
+            .project({ name : 1 })
+            .exec(function (err, documents) {
+                should.not.exist(err);
+                documents.length.should.equal(1);
+                done();
+            });
+    });
+
+    it("aggregateDeleted([{$project : {name : 1} }]) -> should return deleted documents", function (done) {
+        TestModel.aggregateDeleted([
+            {
+                $project : { name : 1 }
+            }
+        ], function (err, documents) {
+            should.not.exist(err);
+            documents.length.should.equal(2);
+            done();
+        });
+    });
+
+    it("aggregateDeleted([{$project : {name : 1} }]) -> should return deleted documents (pipeline)", function (done) {
+        TestModel
+          .aggregateDeleted()
+          .project({ name : 1 })
+          .exec(function (err, documents) {
+              should.not.exist(err);
+              documents.length.should.equal(2);
+              done();
+          });
+    });
+
+    it("aggregateWithDeleted([{$project : {name : 1} }]) -> should return deleted documents", function (done) {
+        TestModel.aggregateWithDeleted([
+            {
+                $project : { name : 1 }
+            }
+        ], function (err, documents) {
+            should.not.exist(err);
+
+            documents.length.should.equal(3);
+            done();
+        });
+    });
+
+    it("aggregateWithDeleted([{$project : {name : 1} }]) -> should return deleted documents (pipeline)", function (done) {
+        TestModel
+          .aggregateWithDeleted()
+          .project({ name : 1 })
+          .exec(function (err, documents) {
+              should.not.exist(err);
+              documents.length.should.equal(3);
+              done();
+          });
+    });
+
+});

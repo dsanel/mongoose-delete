@@ -7,7 +7,6 @@ var mongoose = require('mongoose'),
  * This code is taken from official mongoose repository
  * https://github.com/Automattic/mongoose/blob/master/lib/query.js#L3847-L3873
  */
-/* istanbul ignore next */
 function parseUpdateArguments (conditions, doc, options, callback) {
     if ('function' === typeof options) {
         // .update(conditions, doc, callback)
@@ -107,7 +106,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateMany'];
+        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateMany', 'aggregate'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -122,6 +121,20 @@ module.exports = function (schema, options) {
             overrideItems.forEach(function(method) {
                 if (overridableMethods.indexOf(method) > -1) {
                     finalList.push(method);
+                }
+            });
+        }
+
+        if (finalList.indexOf('aggregate') > -1) {
+            schema.pre('aggregate', function() {
+                var firsMatchStr = JSON.stringify(this.pipeline()[0]);
+
+                if ( firsMatchStr !== '{"$match":{"deleted":{"$ne":false}}}' ) {
+                    if (firsMatchStr === '{"$match":{"showAllDocuments":"true"}}') {
+                        this.pipeline().shift();
+                    } else {
+                        this.pipeline().unshift({ $match: { deleted: { '$ne': true } } });
+                    }
                 }
             });
         }
@@ -154,33 +167,51 @@ module.exports = function (schema, options) {
                     return Model[modelMethodName].apply(this, arguments);
                 };
             } else {
-                schema.statics[method] = function () {
-                    var args = parseUpdateArguments.apply(undefined, arguments);
+                if (method === 'aggregate') {
+                    schema.statics[method + 'Deleted'] = function () {
+                        var args = [];
+                        Array.prototype.push.apply(args, arguments);
+                        var match = { $match : { deleted : {'$ne': false } } };
+                        arguments.length ? args[0].unshift(match) : args.push([match]);
+                        return Model[method].apply(this, args);
+                    };
 
-                    if (use$neOperator) {
-                        args[0].deleted = {'$ne': true};
-                    } else {
-                        args[0].deleted = false;
-                    }
+                    schema.statics[method + 'WithDeleted'] = function () {
+                        var args = [];
+                        Array.prototype.push.apply(args, arguments);
+                        var match = { $match : { showAllDocuments : 'true' } };
+                        arguments.length ? args[0].unshift(match) : args.push([match]);
+                        return Model[method].apply(this, args);
+                    };
+                } else {
+                    schema.statics[method] = function () {
+                        var args = parseUpdateArguments.apply(undefined, arguments);
 
-                    return Model[method].apply(this, args);
-                };
+                        if (use$neOperator) {
+                            args[0].deleted = {'$ne': true};
+                        } else {
+                            args[0].deleted = false;
+                        }
 
-                schema.statics[method + 'Deleted'] = function () {
-                    var args = parseUpdateArguments.apply(undefined, arguments);
+                        return Model[method].apply(this, args);
+                    };
 
-                    if (use$neOperator) {
-                        args[0].deleted = {'$ne': false};
-                    } else {
-                        args[0].deleted = true;
-                    }
+                    schema.statics[method + 'Deleted'] = function () {
+                        var args = parseUpdateArguments.apply(undefined, arguments);
 
-                    return Model[method].apply(this, args);
-                };
+                        if (use$neOperator) {
+                            args[0].deleted = {'$ne': false};
+                        } else {
+                            args[0].deleted = true;
+                        }
 
-                schema.statics[method + 'WithDeleted'] = function () {
-                    return Model[method].apply(this, arguments);
-                };
+                        return Model[method].apply(this, args);
+                    };
+
+                    schema.statics[method + 'WithDeleted'] = function () {
+                        return Model[method].apply(this, arguments);
+                    };
+                }
             }
         });
     }
