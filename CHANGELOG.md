@@ -1,3 +1,11 @@
+## [v0.5.2]
+> April 1, 2020
+
+- Add option to override `aggregate` (@shimonbrandsdorfer)
+- Upgrade all `devDependencies` to latest versions
+- Remove Istanbul coverage tool 
+
+
 ## [v0.5.1]
 > September 3, 2019
 
