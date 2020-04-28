@@ -80,8 +80,29 @@ module.exports = function (schema, options) {
     var indexFields = parseIndexFields(options);
 
     var typeKey = schema.options.typeKey;
+    
     var mongooseMajorVersion = +mongoose.version[0]; // 4, 5...
     var mainUpdateMethod = mongooseMajorVersion < 5 ? 'update' : 'updateMany';
+    var mainUpdateWithDeletedMethod = mainUpdateMethod + 'WithDeleted';
+
+    /**
+     * Updates documents in collection for mongoose schema by specified conditions
+     * 
+     * Uses native mongoose "updateMany" or "update" (for mongoose v4.x) method inside.
+     * In case user overrode the needed method uses *WithDeleted version instead
+     * @param schema Mongoose schema instance
+     * @param conditions 
+     * @param updateQuery 
+     * @param callback 
+     */
+    function updateDocumentsByQuery(schema, conditions, updateQuery, callback) {
+        if (schema[mainUpdateWithDeletedMethod]) {
+            return schema[mainUpdateWithDeletedMethod](conditions, updateQuery, { multi: true }, callback);
+        } else {
+            return schema[mainUpdateMethod](conditions, updateQuery, { multi: true }, callback);
+        }
+    }
+    
     schema.add({ deleted: createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted }) });
 
     if (options.deletedAt === true) {
@@ -262,11 +283,7 @@ module.exports = function (schema, options) {
             doc.deletedBy = deletedBy;
         }
 
-        if (this.updateWithDeleted) {
-            return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
-        } else {
-            return this[mainUpdateMethod](conditions, doc, { multi: true }, callback);
-        }
+        return updateDocumentsByQuery(this, conditions, doc, callback);
     };
 
     schema.statics.deleteById =  function (id, deletedBy, callback) {
@@ -300,11 +317,7 @@ module.exports = function (schema, options) {
             deletedAt: undefined,
             deletedBy: undefined
         };
-
-        if (this.updateWithDeleted) {
-            return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
-        } else {
-            return this[mainUpdateMethod](conditions, doc, { multi: true }, callback);
-        }
+        
+        return updateDocumentsByQuery(this, conditions, doc, callback);
     };
 };
