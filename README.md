@@ -181,6 +181,7 @@ We have the option to override all standard methods or only specific methods. Ov
 | findOneAndUpdate()         | findOneAndUpdateDeleted | findOneAndUpdateWithDeleted |
 | update()                   | updateDeleted           | updateWithDeleted           |
 | updateMany()               | updateManyDeleted       | updateManyWithDeleted       |
+| aggregate()                | aggregateDeleted        | aggregateWithDeleted        |
 
 ### Examples how to override one or multiple methods
 
