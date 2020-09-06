@@ -81,9 +81,10 @@ module.exports = function (schema, options) {
 
     var typeKey = schema.options.typeKey;
     var deletedKey = options.deletedKey || 'deleted';
+    var privateDelete = options.privateDelete || false;
     var mongooseMajorVersion = +mongoose.version[0]; // 4, 5...
     var mainUpdateMethod = mongooseMajorVersion < 5 ? 'update' : 'updateMany';
-    schema.add(createSchemaObject(deletedKey, createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted }), {}));
+    schema.add(createSchemaObject(deletedKey, createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted, private: privateDelete }), {}));
 
     if (options.deletedAt === true) {
         schema.add({ deletedAt: createSchemaObject(typeKey, Date, { index: indexFields.deletedAt }) });
