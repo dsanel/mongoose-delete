@@ -80,9 +80,10 @@ module.exports = function (schema, options) {
     var indexFields = parseIndexFields(options);
 
     var typeKey = schema.options.typeKey;
+    var deletedKey = options.deletedKey || 'deleted';
     var mongooseMajorVersion = +mongoose.version[0]; // 4, 5...
     var mainUpdateMethod = mongooseMajorVersion < 5 ? 'update' : 'updateMany';
-    schema.add({ deleted: createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted }) });
+    schema.add(createSchemaObject(deletedKey, createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted }), {}));
 
     if (options.deletedAt === true) {
         schema.add({ deletedAt: createSchemaObject(typeKey, Date, { index: indexFields.deletedAt }) });
@@ -98,8 +99,8 @@ module.exports = function (schema, options) {
     }
 
     schema.pre('save', function (next) {
-        if (!this.deleted) {
-            this.deleted = false;
+        if (!this[deletedKey]) {
+            this[deletedKey] = false;
         }
         next();
     });
@@ -222,7 +223,7 @@ module.exports = function (schema, options) {
           deletedBy = null;
         }
 
-        this.deleted = true;
+        this[deletedKey] = true;
 
         if (schema.path('deletedAt')) {
             this.deletedAt = new Date();
@@ -250,9 +251,9 @@ module.exports = function (schema, options) {
             deletedBy = null;
         }
 
-        var doc = {
-            deleted: true
-        };
+        var doc = {};
+
+        doc[deletedKey] = true;
 
         if (schema.path('deletedAt')) {
             doc.deletedAt = new Date();
@@ -283,7 +284,7 @@ module.exports = function (schema, options) {
     };
 
     schema.methods.restore = function (callback) {
-        this.deleted = false;
+        this[deletedKey] = false;
         this.deletedAt = undefined;
         this.deletedBy = undefined;
         return this.save(callback);
@@ -296,10 +297,11 @@ module.exports = function (schema, options) {
         }
 
         var doc = {
-            deleted: false,
             deletedAt: undefined,
             deletedBy: undefined
         };
+
+        doc[deletedKey] = false;
 
         if (this.updateWithDeleted) {
             return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
