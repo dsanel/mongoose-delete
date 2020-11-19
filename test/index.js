@@ -5,6 +5,8 @@ var should = require('chai').should(),
 
 var mongoose_delete = require('../');
 
+var ObjectId = mongoose.Types.ObjectId;
+
 before(function (done) {
     mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test', {useNewUrlParser: true});
     if (+mongoose.version[0] >= 5) {
@@ -1742,4 +1744,114 @@ describe("aggregate methods: { overrideMethods: ['aggregate'] }", function () {
           });
     });
 
+});
+
+
+describe("mongoose_delete find method overridden with populate", function () {
+    var TestPopulateSchema1 = new Schema(
+        { name: String },
+        { collection: 'TestPopulate1' }
+    );
+    TestPopulateSchema1.plugin(mongoose_delete, { overrideMethods: 'all' });
+    var TestPopulate1 = mongoose.model('TestPopulate1', TestPopulateSchema1);
+
+    var TestPopulateSchema2 = new Schema(
+        {
+            name: String,
+            test: { type: ObjectId, ref: 'TestPopulate1' }
+        },
+        { collection: 'TestPopulate2' }
+    );
+    TestPopulateSchema2.plugin(mongoose_delete, { overrideMethods: 'all' });
+    var TestPopulate2 = mongoose.model('TestPopulate2', TestPopulateSchema2);
+
+    beforeEach(function (done) {
+        TestPopulate1.create(
+            [
+                { name: 'Obi-Wan Kenobi', _id: ObjectId("53da93b16b4a6670076b16b1"), deleted: true },
+                { name: 'Darth Vader', _id: ObjectId("53da93b16b4a6670076b16b2") },
+                { name: 'Luke Skywalker', _id: ObjectId("53da93b16b4a6670076b16b3"), deleted: true }
+            ],
+            function() {
+                TestPopulate2.create(
+                    [
+                        { name: 'Student 1', test: ObjectId("53da93b16b4a6670076b16b1") },
+                        { name: 'Student 2', test: ObjectId("53da93b16b4a6670076b16b2") },
+                        { name: 'Student 3', test: ObjectId("53da93b16b4a6670076b16b3"), deleted: true }
+                    ],
+                    done
+                )
+            }
+        );
+    });
+
+    afterEach(function (done) {
+        mongoose.connection.db.dropCollection("TestPopulate1", done);
+    });
+
+    afterEach(function (done) {
+        mongoose.connection.db.dropCollection("TestPopulate2", done);
+    });
+
+    it("populate() -> should not return deleted sub-document", function (done) {
+        TestPopulate2
+            .findOne({ name: 'Student 1' })
+            .populate({ path: 'test' })
+            .exec(function (err, document) {
+                should.not.exist(err);
+
+                expect(document.test).to.be.null;
+                done();
+            });
+    });
+
+    it("populate() -> should return the deleted sub-document using { withDeleted: true }", function (done) {
+        TestPopulate2
+            .findOne({ name: 'Student 1' })
+            .populate({ path: 'test', options: { withDeleted: true } })
+            .exec(function (err, document) {
+                should.not.exist(err);
+                expect(document.test).not.to.be.null;
+                document.test.deleted.should.equal(true);
+                done();
+            });
+    });
+
+    it("populate() -> should not return deleted documents and sub-documents", function (done) {
+        TestPopulate2
+            .find({ })
+            .populate({ path: 'test' })
+            .exec(function (err, documents) {
+                should.not.exist(err);
+
+                var student1 = documents.findIndex(function(i) { return i.name === "Student 1" });
+                var student2 = documents.findIndex(function(i) { return i.name === "Student 2" });
+
+                documents.length.should.equal(2)
+                expect(documents[student1].test).to.be.null;
+                expect(documents[student2].test).not.to.be.null;
+
+                done();
+            });
+    });
+
+    it("populate() -> should return deleted documents and sub-documents", function (done) {
+        TestPopulate2
+            .findWithDeleted()
+            .populate({ path: 'test', options: { withDeleted: true } })
+            .exec(function (err, documents) {
+                should.not.exist(err);
+
+                documents.length.should.equal(3);
+
+                var student1 = documents.findIndex(function(i) { return i.name === "Student 1" });
+                var student2 = documents.findIndex(function(i) { return i.name === "Student 2" });
+                var student3 = documents.findIndex(function(i) { return i.name === "Student 3" });
+
+                expect(documents[student1].test).not.to.be.null;
+                expect(documents[student2].test).not.to.be.null;
+                expect(documents[student3].test).not.to.be.null;
+                done();
+            });
+    });
 });

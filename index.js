@@ -82,6 +82,16 @@ module.exports = function (schema, options) {
     var typeKey = schema.options.typeKey;
     var mongooseMajorVersion = +mongoose.version[0]; // 4, 5...
     var mainUpdateMethod = mongooseMajorVersion < 5 ? 'update' : 'updateMany';
+    var mainUpdateWithDeletedMethod = mainUpdateMethod + 'WithDeleted';
+
+    function updateDocumentsByQuery(schema, conditions, updateQuery, callback) {
+        if (schema[mainUpdateWithDeletedMethod]) {
+            return schema[mainUpdateWithDeletedMethod](conditions, updateQuery, { multi: true }, callback);
+        } else {
+            return schema[mainUpdateMethod](conditions, updateQuery, { multi: true }, callback);
+        }
+    }
+
     schema.add({ deleted: createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted }) });
 
     if (options.deletedAt === true) {
@@ -150,11 +160,15 @@ module.exports = function (schema, options) {
                 }
 
                 schema.statics[method] = function () {
-                    if (use$neOperator) {
-                        return Model[modelMethodName].apply(this, arguments).where('deleted').ne(true);
-                    } else {
-                        return Model[modelMethodName].apply(this, arguments).where({deleted: false});
+                    var query = Model[modelMethodName].apply(this, arguments);
+                    if (!arguments[2] || arguments[2].withDeleted !== true) {
+                        if (use$neOperator) {
+                            query.where('deleted').ne(true);
+                        } else {
+                            query.where({deleted: false});
+                        }
                     }
+                    return query;
                 };
                 schema.statics[method + 'Deleted'] = function () {
                     if (use$neOperator) {
@@ -262,11 +276,7 @@ module.exports = function (schema, options) {
             doc.deletedBy = deletedBy;
         }
 
-        if (this.updateWithDeleted) {
-            return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
-        } else {
-            return this[mainUpdateMethod](conditions, doc, { multi: true }, callback);
-        }
+        return updateDocumentsByQuery(this, conditions, doc, callback);
     };
 
     schema.statics.deleteById =  function (id, deletedBy, callback) {
@@ -301,10 +311,6 @@ module.exports = function (schema, options) {
             deletedBy: undefined
         };
 
-        if (this.updateWithDeleted) {
-            return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
-        } else {
-            return this[mainUpdateMethod](conditions, doc, { multi: true }, callback);
-        }
+        return updateDocumentsByQuery(this, conditions, doc, callback);
     };
 };

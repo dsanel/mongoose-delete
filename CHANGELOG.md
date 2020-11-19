@@ -1,3 +1,12 @@
+## [v0.5.3]
+> November 19, 2020
+
+- Add option to `populate` deleted documents #40 (@sven)
+- Update documentation for `aggregate` (@Jericho1060)
+- Update `mocha` -> `8.x`
+- fix: deprecation warning for collection.update when user overrides update method #81 #78 (@nsine)
+- fix: `nyc` moved into `devDependencies` #80 (@isikhi)
+
 ## [v0.5.2]
 > April 1, 2020
 
