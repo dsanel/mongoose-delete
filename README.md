@@ -132,6 +132,37 @@ fluffy.save(function () {
 });
 ```
 
+The type for `deletedBy` does not have to be `ObjectId`, you can set a custom type, such as `String`.
+
+```javascript
+var mongoose_delete = require('mongoose-delete');
+
+var PetSchema = new Schema({
+    name: String
+});
+
+PetSchema.plugin(mongoose_delete, { deletedBy: true, deletedByType: String });
+
+var Pet = mongoose.model('Pet', PetSchema);
+
+var fluffy = new Pet({ name: 'Fluffy' });
+
+fluffy.save(function () {
+    // mongodb: { deleted: false, name: 'Fluffy' }
+
+    var idUser = "my-custom-user-id";
+
+    // note: you should invoke exactly delete() method instead of standard fluffy.remove()
+    fluffy.delete(idUser, function () {
+        // mongodb: { deleted: true, name: 'Fluffy', deletedBy: 'my-custom-user-id' }
+
+        fluffy.restore(function () {
+            // mongodb: { deleted: false, name: 'Fluffy' }
+        });
+    });
+});
+```
+
 ### Bulk delete and restore
 
 ```javascript
