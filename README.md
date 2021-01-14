@@ -13,7 +13,7 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
   - [Add __deletedBy__ key to record who deleted document](#who-has-deleted-the-data)
   - Restore deleted documents using __restore__ method
   - [Bulk delete and restore](#bulk-delete-and-restore)
-  - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, countDocuments, find, findOne, findOneAndUpdate, update, updateMany__)
+  - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, countDocuments, find, findOne, findOneAndUpdate, update, updateOne, updateMany__)
   - [For overridden methods we have two additional methods](#method-overridden): __methodDeleted__ and __methodWithDeleted__
   - [Disable model validation on delete](#disable-model-validation-on-delete)
   - [Option to create index on delete fields](#create-index-on-fields) (__deleted__, __deletedAt__, __deletedBy__)
@@ -181,6 +181,7 @@ We have the option to override all standard methods or only specific methods. Ov
 | findOne()                  | findOneDeleted          | findOneWithDeleted          |
 | findOneAndUpdate()         | findOneAndUpdateDeleted | findOneAndUpdateWithDeleted |
 | update()                   | updateDeleted           | updateWithDeleted           |
+| updateOne()                | updateOneDeleted        | updateOneWithDeleted        |
 | updateMany()               | updateManyDeleted       | updateManyWithDeleted       |
 | aggregate()                | aggregateDeleted        | aggregateWithDeleted        |
 
