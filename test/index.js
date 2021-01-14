@@ -637,6 +637,41 @@ describe("check not overridden static methods", function () {
         });
     });
 
+    it("updateOne() -> should find and update deleted document", function (done) {
+        TestModel.updateOne({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            doc.nModified.should.equal(1);
+            done();
+        });
+    });
+
+    it("updateOne() -> should find and update exists deleted document", function (done) {
+        TestModel.updateOne({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {upsert: true}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            doc.nModified.should.equal(1);
+            done();
+        });
+    });
+
+    it("updateOne() -> should insert new document", function (done) {
+        TestModel.updateOne({name: 'Obi-Wan Kenobi Upsert'}, {name: 'Obi-Wan Kenobi Upsert Test'}, {upsert: true}, function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc.upserted).not.to.be.null;
+            expect(doc.upserted).not.to.be.undefined;
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            doc.nModified.should.equal(0);
+            done();
+        });
+    });
+
     it("updateMany() -> should update deleted document", function (done) {
         TestModel.updateMany({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, function (err, doc) {
             should.not.exist(err);
@@ -829,6 +864,30 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
         });
     });
 
+    it("updateOne(conditions, update, options, callback) -> should not update first deleted document", function (done) {
+        TestModel.updateOne({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, {}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(0);
+            doc.nModified.should.equal(0);
+            done();
+        });
+    });
+
+    it("updateOne(conditions, update, options, callback) -> should insert new document", function (done) {
+        TestModel.updateOne({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, {upsert: true}, function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc.upserted).not.to.be.null;
+            expect(doc.upserted).not.to.be.undefined;
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            doc.nModified.should.equal(0);
+            done();
+        });
+    });
+
     it("updateMany(conditions, update, options, callback) -> should not update deleted documents", function (done) {
         TestModel.updateMany({}, {name: 'Luke Skywalker Test'}, {multi: true}, function (err, doc) {
             should.not.exist(err);
@@ -845,6 +904,30 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
 
             doc.ok.should.equal(1);
             doc.n.should.equal(1);
+            done();
+        });
+    });
+
+    it("updateOne(conditions, update, options) -> should not update first deleted document", function (done) {
+        TestModel.updateOne({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, {}).exec(function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(0);
+            doc.nModified.should.equal(0);
+            done();
+        });
+    });
+
+    it("updateOne(conditions, update, options) -> should insert new document", function (done) {
+        TestModel.updateOne({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, {upsert: true}).exec(function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc.upserted).not.to.be.null;
+            expect(doc.upserted).not.to.be.undefined;
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            doc.nModified.should.equal(0);
             done();
         });
     });
@@ -869,6 +952,17 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
         });
     });
 
+    it("updateOne(conditions, update, callback) -> should not update first deleted document", function (done) {
+        TestModel.updateOne({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(0);
+            doc.nModified.should.equal(0);
+            done();
+        });
+    });
+
     it("updateMany(conditions, update, callback) -> should not update deleted documents", function (done) {
         TestModel.updateMany({}, {name: 'Luke Skywalker Test'}, function (err, doc) {
             should.not.exist(err);
@@ -885,6 +979,17 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
 
             doc.ok.should.equal(1);
             doc.n.should.equal(1);
+            done();
+        });
+    });
+
+    it("updateOne(conditions, update) -> should not update first deleted document", function (done) {
+        TestModel.updateOne({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, {}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(0);
+            doc.nModified.should.equal(0);
             done();
         });
     });
@@ -909,6 +1014,29 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
         });
     });
 
+    it("updateOneDeleted(conditions, update, options, callback) -> should update first deleted document", function (done) {
+        TestModel.updateOneDeleted({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, {}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            doc.nModified.should.equal(1);
+            done();
+        });
+    });
+
+    it("updateOneDeleted(conditions, update, options, callback) -> should update first deleted document", function (done) {
+        TestModel.updateOneDeleted({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, {upsert: true}, function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc.upserted).to.be.undefined;
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            doc.nModified.should.equal(1);
+            done();
+        });
+    });
+
     it("updateManyDeleted() -> should update deleted document", function (done) {
         TestModel.updateManyDeleted({}, {name: 'Test 123'}, {multi: true}, function (err, doc) {
             should.not.exist(err);
@@ -925,6 +1053,29 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
 
             doc.ok.should.equal(1);
             doc.n.should.equal(3);
+            done();
+        });
+    });
+
+    it("updateOneWithDeleted(conditions, update, options, callback) -> should update first deleted document", function (done) {
+        TestModel.updateOneWithDeleted({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, {}, function (err, doc) {
+            should.not.exist(err);
+
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            doc.nModified.should.equal(1);
+            done();
+        });
+    });
+
+    it("updateOneWithDeleted(conditions, update, options, callback) -> should update first deleted document", function (done) {
+        TestModel.updateOneWithDeleted({name: 'Luke Skywalker'}, {name: 'Luke Skywalker Test'}, {upsert: true}, function (err, doc) {
+            should.not.exist(err);
+
+            expect(doc.upserted).to.be.undefined;
+            doc.ok.should.equal(1);
+            doc.n.should.equal(1);
+            doc.nModified.should.equal(1);
             done();
         });
     });
@@ -1034,11 +1185,41 @@ describe("check the existence of override static methods: { overrideMethods: tru
         expect(TestModel.updateWithDeleted).to.exist;
         done();
     });
+
+    it("updateOne() -> method should exist", function (done) {
+        expect(TestModel.updateOne).to.exist;
+        done();
+    });
+
+    it("updateOneDeleted() -> method should exist", function (done) {
+        expect(TestModel.updateOneDeleted).to.exist;
+        done();
+    });
+
+    it("updateOneWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.updateOneWithDeleted).to.exist;
+        done();
+    });
+
+    it("updateMany() -> method should exist", function (done) {
+        expect(TestModel.updateMany).to.exist;
+        done();
+    });
+
+    it("updateManyDeleted() -> method should exist", function (done) {
+        expect(TestModel.updateManyDeleted).to.exist;
+        done();
+    });
+
+    it("updateManyWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.updateManyWithDeleted).to.exist;
+        done();
+    });
 });
 
-describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update'] }", function () {
+describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany'] }", function () {
     var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
-    TestSchema.plugin(mongoose_delete, {overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update']});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany']});
     var TestModel = mongoose.model('Test7', TestSchema);
 
     it("testError() -> method should not exist", function (done) {
@@ -1135,9 +1316,39 @@ describe("check the existence of override static methods: { overrideMethods: ['t
         expect(TestModel.updateWithDeleted).to.exist;
         done();
     });
+
+    it("updateOne() -> method should exist", function (done) {
+        expect(TestModel.updateOne).to.exist;
+        done();
+    });
+
+    it("updateOneDeleted() -> method should exist", function (done) {
+        expect(TestModel.updateOneDeleted).to.exist;
+        done();
+    });
+
+    it("updateOneWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.updateOneWithDeleted).to.exist;
+        done();
+    });
+
+    it("updateMany() -> method should exist", function (done) {
+        expect(TestModel.updateMany).to.exist;
+        done();
+    });
+
+    it("updateManyDeleted() -> method should exist", function (done) {
+        expect(TestModel.updateManyDeleted).to.exist;
+        done();
+    });
+
+    it("updateManyWithDeleted() -> method should exist", function (done) {
+        expect(TestModel.updateManyWithDeleted).to.exist;
+        done();
+    });
 });
 
-describe("check the existence of override static methods: { overrideMethods: ['count', 'find'] }", function () {
+describe("check the existence of override static methods: { overrideMethods: ['count', 'countDocuments', 'find'] }", function () {
     var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
     TestSchema.plugin(mongoose_delete, {overrideMethods: ['count', 'countDocuments', 'find']});
     var TestModel = mongoose.model('Test8', TestSchema);
@@ -1197,12 +1408,12 @@ describe("check the existence of override static methods: { overrideMethods: ['c
         done();
     });
 
-    it("findOneDeleted() -> method should exist", function (done) {
+    it("findOneDeleted() -> method should not exist", function (done) {
         expect(TestModel.findOneDeleted).to.not.exist;
         done();
     });
 
-    it("findOneWithDeleted() -> method should exist", function (done) {
+    it("findOneWithDeleted() -> method should not exist", function (done) {
         expect(TestModel.findOneWithDeleted).to.not.exist;
         done();
     });
@@ -1212,12 +1423,12 @@ describe("check the existence of override static methods: { overrideMethods: ['c
         done();
     });
 
-    it("findOneAndUpdateDeleted() -> method should exist", function (done) {
+    it("findOneAndUpdateDeleted() -> method should not exist", function (done) {
         expect(TestModel.findOneAndUpdateDeleted).to.not.exist;
         done();
     });
 
-    it("findOneAndUpdateWithDeleted() -> method should exist", function (done) {
+    it("findOneAndUpdateWithDeleted() -> method should not exist", function (done) {
         expect(TestModel.findOneAndUpdateWithDeleted).to.not.exist;
         done();
     });
@@ -1227,13 +1438,43 @@ describe("check the existence of override static methods: { overrideMethods: ['c
         done();
     });
 
-    it("updateDeleted() -> method should exist", function (done) {
+    it("updateDeleted() -> method should not exist", function (done) {
         expect(TestModel.updateDeleted).to.not.exist;
         done();
     });
 
-    it("updateWithDeleted() -> method should exist", function (done) {
+    it("updateWithDeleted() -> method should not exist", function (done) {
         expect(TestModel.updateWithDeleted).to.not.exist;
+        done();
+    });
+
+    it("updateOne() -> method should exist", function (done) {
+        expect(TestModel.updateOne).to.exist;
+        done();
+    });
+
+    it("updateOneDeleted() -> method should not exist", function (done) {
+        expect(TestModel.updateOneDeleted).to.not.exist;
+        done();
+    });
+
+    it("updateOneWithDeleted() -> method should not exist", function (done) {
+        expect(TestModel.updateOneWithDeleted).to.not.exist;
+        done();
+    });
+
+    it("updateMany() -> method should exist", function (done) {
+        expect(TestModel.updateMany).to.exist;
+        done();
+    });
+
+    it("updateManyDeleted() -> method should not exist", function (done) {
+        expect(TestModel.updateManyDeleted).to.not.exist;
+        done();
+    });
+
+    it("updateManyWithDeleted() -> method should not exist", function (done) {
+        expect(TestModel.updateManyWithDeleted).to.not.exist;
         done();
     });
 });
