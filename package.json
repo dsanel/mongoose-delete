@@ -1,0 +1,37 @@
+{
+  "name": "@joakink/mongoose-delete",
+  "version": "0.7.0",
+  "description": "Fork for Mongoose soft delete plugin",
+  "author": "Sanel Deljkic <dsanel@gmail.com> (http://dsanel.github.io/)",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "test-cov": "nyc --reporter=html --reporter=text ./node_modules/mocha/bin/_mocha -- -R spec ./test/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:dsanel/mongoose-delete.git"
+  },
+  "keywords": [
+    "mongoose",
+    "soft",
+    "delete",
+    "delete",
+    "remove",
+    "plugin"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dsanel/mongoose-delete/issues"
+  },
+  "homepage": "https://github.com/dsanel/mongoose-delete",
+  "peerDependencies": {
+    "mongoose": "4.x || 5.x"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "8.x",
+    "mongoose": "^5",
+    "nyc": "^15.0.0"
+  }
+}
