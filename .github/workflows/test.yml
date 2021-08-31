@@ -9,27 +9,22 @@ jobs:
       fail-fast: false
       matrix:
         node: [12, 14, 16]
+        mongodb-version: ['4.0', '4.2', '4.4']
     name: Node ${{ matrix.node }}
     steps:
-      - uses: actions/checkout@v2
+    - name: Git checkout
+      uses: actions/checkout@v2
 
-      - name: Setup node
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node }}
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
 
-      - run: npm install
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.6.0
+      with:
+        mongodb-version: ${{ matrix.mongodb-version }}
 
-      - name: Setup
-        run: |
-          wget -q http://downloads.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.0.2.tgz
-          tar xf mongodb-linux-x86_64-ubuntu1804-4.0.2.tgz
-          mkdir -p ./data/db/27017 ./data/db/27000
-          printf "\n--timeout 8000" >> ./test/mocha.opts
-          ./mongodb-linux-x86_64-ubuntu1804-4.0.2/bin/mongod --fork --dbpath ./data/db/27017 --syslog --port 27017
-          sleep 2
-          mongod --version
-          mkdir ./test/typescript/node_modules
-          ln -s `pwd` ./test/typescript/node_modules/mongoose
-          echo `pwd`/mongodb-linux-x86_64-ubuntu1804-4.0.2/bin >> $GITHUB_PATH
-      - run: npm test
+    - run: npm install
+
+    - run: npm test
