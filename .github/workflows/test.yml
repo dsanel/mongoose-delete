@@ -1,0 +1,35 @@
+name: Test
+on:
+    pull_request:
+    push:
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [12, 14, 16]
+    name: Node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: npm install
+
+      - name: Setup
+        run: |
+          wget -q http://downloads.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.0.2.tgz
+          tar xf mongodb-linux-x86_64-ubuntu1804-4.0.2.tgz
+          mkdir -p ./data/db/27017 ./data/db/27000
+          printf "\n--timeout 8000" >> ./test/mocha.opts
+          ./mongodb-linux-x86_64-ubuntu1804-4.0.2/bin/mongod --fork --dbpath ./data/db/27017 --syslog --port 27017
+          sleep 2
+          mongod --version
+          mkdir ./test/typescript/node_modules
+          ln -s `pwd` ./test/typescript/node_modules/mongoose
+          echo `pwd`/mongodb-linux-x86_64-ubuntu1804-4.0.2/bin >> $GITHUB_PATH
+      - run: npm test
