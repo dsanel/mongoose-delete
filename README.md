@@ -26,6 +26,10 @@ Install using [npm](https://npmjs.org)
 ```
 npm install mongoose-delete
 ```
+## TypeScript support
+
+The plugin currently do not have its own type definition. Please be free to use [@types/mongoose-delete](https://www.npmjs.com/package/@types/mongoose-delete).   
+
 ## Usage
 
 We can use this plugin with or without options.
