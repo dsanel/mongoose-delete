@@ -1,3 +1,14 @@
+## [v0.5.4]
+> August 31, 2021
+
+- Upgrade all test to support mongoose 5.x and 6.x
+- Stop using TravicCI as test runner
+- Setup GitHub action for tests 
+  - Node: 12, 14, 16
+  - MongoDB: 4.0, 4.2, 4.4
+- Upgrade Mongoose ^6 in `devDependencies`
+- Add Mongoose 6 into `peerDependencies` #105 (@Paso)
+
 ## [v0.5.3]
 > November 19, 2020
 
