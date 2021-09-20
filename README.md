@@ -28,7 +28,28 @@ npm install mongoose-delete
 ```
 ## TypeScript support
 
-The plugin currently do not have its own type definition. Please be free to use [@types/mongoose-delete](https://www.npmjs.com/package/@types/mongoose-delete).   
+The plugin currently does not have its own type definition. Please be free to use [@types/mongoose-delete](https://www.npmjs.com/package/@types/mongoose-delete).
+
+In doing so, you should make use of the `SoftDeleteModel` type, instead of the `Model` type.
+
+```typescript
+import { Schema, model, connect } from 'mongoose';
+import { SoftDeleteModel }, MongooseDelete from 'mongoose-delete';
+
+interface Pet extends SoftDeleteDocument {
+  name: string;
+}
+
+const PetSchema = new Schema<Pet>({
+    name: String
+});
+
+PetSchema.plugin(MongooseDelete, { deletedBy: true, deletedByType: String });
+
+const model: SoftDeleteModel = model<Pet>('Pet', PetSchema);
+
+export default model;
+```
 
 ## Usage
 
@@ -231,7 +252,7 @@ var PetSchema = new Schema({
 
 // Override all methods
 PetSchema.plugin(mongoose_delete, { overrideMethods: 'all' });
-// or 
+// or
 PetSchema.plugin(mongoose_delete, { overrideMethods: true });
 
 // Overide only specific methods
@@ -293,7 +314,7 @@ var PetSchema = new Schema({
 
 // Index all field related to plugin (deleted, deletedAt, deletedBy)
 PetSchema.plugin(mongoose_delete, { indexFields: 'all' });
-// or 
+// or
 PetSchema.plugin(mongoose_delete, { indexFields: true });
 
 // Index only specific fields
