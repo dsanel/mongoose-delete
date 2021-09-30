@@ -304,6 +304,23 @@ PetSchema.plugin(mongoose_delete, { indexFields: ['deletedAt'] });
 
 ```
 
+### Custom field names or schema type definition
+
+```javascript
+var mongoose_delete = require('mongoose-delete');
+
+var PetSchema = new Schema({
+	name: String
+});
+
+// Add a custom name for each property, will create alias for the original name
+PetSchema.plugin(mongoose_delete, { deletedBy: 'deleted_by', deletedAt: 'deleted_at' });
+
+// Use custom schema type definition by supplying an object
+PetSchema.plugin(mongoose_delete, { deletedBy: { name: 'deleted_by', default: 'None', type: String }, deletedAt: { alias: 'deletedTimestamp' } });
+```
+Expects a Mongoose [Schema Types](https://mongoosejs.com/docs/schematypes.html#schematype-options) object with the added option of `name`.
+
 ## License
 
 The MIT License

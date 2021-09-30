@@ -380,6 +380,55 @@ describe("mongoose_delete with options: { deletedAt : true }, using option: type
     });
 });
 
+describe("mongoose_delete with options: { deletedAt : 'deleted_at' }, using custom field name", function () {
+    const Test2Schema = new Schema({name: String}, {collection: 'mongoose_delete_test2b'});
+    Test2Schema.plugin(mongoose_delete, {deletedAt: 'deleted_at'});
+    const Test2 = mongoose.model('Test2b', Test2Schema);
+    const puffy1 = new Test2({name: 'Puffy1'});
+    const puffy2 = new Test2({name: 'Puffy2'});
+
+    before(async function () {
+        await puffy1.save();
+        await puffy2.save()
+    });
+
+    after(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_delete_test3b");
+    });
+
+    it("delete() -> should save 'deletedAt' key", async function () {
+        const puffy = await Test2.findOne({name: 'Puffy1'});
+        const success = await puffy.delete();
+
+        expect(success).to.have.property('deleted').that.equal(true);
+        expect(success).to.have.property('deleted_at').that.is.an('date')
+        expect(success.deletedAt).that.is.an('date')
+    });
+
+    it("deleteById() -> should save `deletedAt` key", async function () {
+        const documents = await Test2.deleteById(puffy2._id);
+
+        expect(documents).to.be.mongoose_ok();
+        expect(documents).to.be.mongoose_count(1);
+
+        const doc = await Test2.findOne({name: 'Puffy2'});
+
+        expect(doc).to.have.property('deleted').that.equal(true);
+        expect(doc).to.have.property('deleted_at').that.is.an('date')
+        expect(doc.deletedAt).that.is.an('date')
+    });
+
+    it("restore() -> should set deleted:false and delete `deletedAt` key", async function () {
+        const puffy = await Test2.findOne({name: 'Puffy1'})
+
+        const success = await puffy.restore();
+
+        expect(success).to.have.property('deleted').that.equal(false);
+        expect(success).to.have.property('deleted_at').that.not.exist;
+        expect(success.deletedAt).that.not.exist;
+    });
+});
+
 describe("mongoose_delete with options: { deletedBy : true }", function () {
 
     var Test3Schema = new Schema({name: String}, {collection: 'mongoose_delete_test3'});
@@ -584,6 +633,108 @@ describe("mongoose_delete with options: { deletedBy : true, deletedByType: Strin
                 done();
             });
         });
+    });
+});
+
+describe("mongoose_delete with options: { deletedBy : 'deleted_by' }, using custom field name", function () {
+
+    var Test3Schema = new Schema({name: String}, {collection: 'mongoose_delete_test3b'});
+    Test3Schema.plugin(mongoose_delete, {deletedBy: 'deleted_by'});
+    var Test3 = mongoose.model('Test3b', Test3Schema);
+    var puffy1 = new Test3({name: 'Puffy1'});
+    var puffy2 = new Test3({name: 'Puffy2'});
+
+    before(async function () {
+        await puffy1.save();
+        await puffy2.save()
+    });
+
+    after(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_delete_test3b");
+    });
+
+    var id = mongoose.Types.ObjectId("53da93b16b4a6670076b16bf");
+
+    it("delete() -> should save 'deletedBy' key", async function () {
+        const puffy = await Test3.findOne({name: 'Puffy1'});
+        const success = await puffy.delete(id);
+
+        expect(success).to.have.property('deleted').that.equal(true);
+        expect(success).to.have.property('deleted_by').that.deep.equal(id);
+        expect(success.deletedBy).that.deep.equal(id);
+    });
+
+    it("deleteById() -> should save `deletedBy` key", async function () {
+        const documents = await Test3.deleteById(puffy2._id, id);
+
+        expect(documents).to.be.mongoose_ok();
+        expect(documents).to.be.mongoose_count(1);
+
+        const doc = await Test3.findOne({name: 'Puffy2'});
+
+        expect(doc).to.have.property('deleted').that.equal(true);
+        expect(doc).to.have.property('deleted_by').that.deep.equal(id);
+        expect(doc.deletedBy).that.deep.equal(id);
+    });
+
+    it("restore() -> should set deleted:false and delete `deletedBy` key", async function () {
+        const puffy = await Test3.findOne({name: 'Puffy1'})
+
+        const success = await puffy.restore();
+
+        expect(success).to.have.property('deleted').that.equal(false);
+        expect(success).to.have.property('deleted_by').that.not.exist;
+        expect(success.deletedBy).that.not.exist;
+    });
+});
+
+describe("mongoose_delete with options: { deletedBy : { ... }, using custom schema", function () {
+
+    var Test3Schema = new Schema({name: String}, {collection: 'mongoose_delete_test3c'});
+    Test3Schema.plugin(mongoose_delete, {deletedBy: { name: 'deleted_by', get: (id) => { return id && { id }; }, type: String }});
+    var Test3 = mongoose.model('Test3c', Test3Schema);
+    var puffy1 = new Test3({name: 'Puffy1'});
+    var puffy2 = new Test3({name: 'Puffy2'});
+
+    before(async function () {
+        await puffy1.save();
+        await puffy2.save()
+    });
+
+    after(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_delete_test3c");
+    });
+
+    var id = '53da93b16b4a6670076b16bf';
+
+    it("delete() -> should save 'deletedBy' key", async function () {
+        const puffy = await Test3.findOne({name: 'Puffy1'});
+        const success = await puffy.delete(id);
+
+        expect(success).to.have.property('deleted').that.equal(true);
+        expect(success.deletedBy).that.deep.equal({ id });
+    });
+
+    it("deleteById() -> should save `deletedBy` key", async function () {
+        const documents = await Test3.deleteById(puffy2._id, id);
+
+        expect(documents).to.be.mongoose_ok();
+        expect(documents).to.be.mongoose_count(1);
+
+        const doc = await Test3.findOne({name: 'Puffy2'});
+
+        expect(doc).to.have.property('deleted').that.equal(true);
+        expect(doc.deletedBy).that.deep.equal({ id });
+    });
+
+    it("restore() -> should set deleted:false and delete `deletedBy` key", async function () {
+        const puffy = await Test3.findOne({name: 'Puffy1'})
+
+        const success = await puffy.restore();
+
+        expect(success).to.have.property('deleted').that.equal(false);
+        expect(success).to.have.property('deletedBy').that.not.exist;
+        expect(success.deletedBy).that.not.exist;
     });
 });
 

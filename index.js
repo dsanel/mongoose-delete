@@ -75,6 +75,34 @@ function createSchemaObject (typeKey, typeValue, options) {
     return options;
 }
 
+function deletedFieldName(deletedValue, fallbackName) {
+    if (typeof deletedValue === 'string') {
+        return deletedValue;
+    } else if (typeof deletedValue === 'object' && deletedValue.name) {
+            return deletedValue.name;
+    } else if (deletedValue === true || typeof deletedValue === 'object') {
+        return fallbackName;
+    }
+}
+
+function addDeletedFieldIfExist(schema, deletedOption, deletedFieldOriginalName, typeKey, type, index) {
+    const name = deletedFieldName(deletedOption, deletedFieldOriginalName);
+    if (name) {
+        const schemaOptions = {
+            [typeKey]: type,
+            index
+        };
+        if (name !== deletedFieldOriginalName) {
+            schemaOptions.alias = deletedFieldOriginalName;
+        }
+        if (typeof deletedOption === 'object') {
+            const { name, ...options } = deletedOption;
+            Object.assign(schemaOptions, options);
+        }
+        schema.add({ [name]: schemaOptions });
+    }
+}
+
 module.exports = function (schema, options) {
     options = options || {};
     var indexFields = parseIndexFields(options);
@@ -83,6 +111,9 @@ module.exports = function (schema, options) {
     var mongooseMajorVersion = +mongoose.version[0]; // 4, 5...
     var mainUpdateMethod = mongooseMajorVersion < 5 ? 'update' : 'updateMany';
     var mainUpdateWithDeletedMethod = mainUpdateMethod + 'WithDeleted';
+
+    const deletedAtField = deletedFieldName(options.deletedAt, 'deletedAt');
+    const deletedByField = deletedFieldName(options.deletedBy, 'deletedBy');
 
     function updateDocumentsByQuery(schema, conditions, updateQuery, callback) {
         if (schema[mainUpdateWithDeletedMethod]) {
@@ -93,14 +124,8 @@ module.exports = function (schema, options) {
     }
 
     schema.add({ deleted: createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted }) });
-
-    if (options.deletedAt === true) {
-        schema.add({ deletedAt: createSchemaObject(typeKey, Date, { index: indexFields.deletedAt }) });
-    }
-
-    if (options.deletedBy === true) {
-        schema.add({ deletedBy: createSchemaObject(typeKey, options.deletedByType || Schema.Types.ObjectId, { index: indexFields.deletedBy }) });
-    }
+    addDeletedFieldIfExist(schema, options.deletedAt, 'deletedAt', typeKey, Date, indexFields.deletedAt);
+    addDeletedFieldIfExist(schema, options.deletedBy, 'deletedBy', typeKey, options.deletedByType || Schema.Types.ObjectId, indexFields.deletedBy);
 
     var use$neOperator = true;
     if (options.use$neOperator !== undefined && typeof options.use$neOperator === "boolean") {
@@ -238,12 +263,12 @@ module.exports = function (schema, options) {
 
         this.deleted = true;
 
-        if (schema.path('deletedAt')) {
-            this.deletedAt = new Date();
+        if (deletedAtField && schema.path(deletedAtField)) {
+            this[deletedAtField] = new Date();
         }
 
-        if (schema.path('deletedBy')) {
-            this.deletedBy = deletedBy;
+        if (deletedByField && schema.path(deletedByField)) {
+            this[deletedByField] = deletedBy;
         }
 
         if (options.validateBeforeDelete === false) {
@@ -268,12 +293,12 @@ module.exports = function (schema, options) {
             deleted: true
         };
 
-        if (schema.path('deletedAt')) {
-            doc.deletedAt = new Date();
+        if (deletedAtField && schema.path(deletedAtField)) {
+            doc[deletedAtField] = new Date();
         }
 
-        if (schema.path('deletedBy')) {
-            doc.deletedBy = deletedBy;
+        if (deletedByField && schema.path(deletedByField)) {
+            doc[deletedByField] = deletedBy;
         }
 
         return updateDocumentsByQuery(this, conditions, doc, callback);
@@ -294,8 +319,12 @@ module.exports = function (schema, options) {
 
     schema.methods.restore = function (callback) {
         this.deleted = false;
-        this.deletedAt = undefined;
-        this.deletedBy = undefined;
+        if (deletedAtField) {
+            this[deletedAtField] = undefined;
+        }
+        if (deletedByField) {
+            this[deletedByField] = undefined;
+        }
         return this.save(callback);
     };
 
@@ -306,10 +335,15 @@ module.exports = function (schema, options) {
         }
 
         var doc = {
-            deleted: false,
-            deletedAt: undefined,
-            deletedBy: undefined
+            deleted: false
         };
+
+        if (deletedAtField) {
+            doc[deletedAtField] = undefined;
+        }
+        if (deletedByField) {
+            doc[deletedByField] = undefined;
+        }
 
         return updateDocumentsByQuery(this, conditions, doc, callback);
     };
