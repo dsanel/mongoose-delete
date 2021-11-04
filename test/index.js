@@ -1897,6 +1897,70 @@ describe("model validation on delete: { validateBeforeDelete: false }", function
     });
 });
 
+describe("model validation on restore: { validateBeforeRestore: false }", function () {
+    var TestSchema = new Schema({
+        name: { type: String, required: true }
+    }, { collection: 'mongoose_restore_test' });
+    TestSchema.plugin(mongoose_delete, { validateBeforeRestore: false });
+    var TestModel = mongoose.model('Test18_restore', TestSchema);
+
+    beforeEach(function (done) {
+        TestModel.create(
+            [
+                { name: 'Luke Skywalker' }
+            ], done);
+    });
+
+    afterEach(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_restore_test", done);
+    });
+
+    it("restore() -> not raise ValidationError error", function (done) {
+        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+            should.not.exist(err);
+            luke.name = "";
+
+            luke.restore(function (err) {
+                should.not.exist(err);
+                done();
+            });
+        });
+    });
+});
+
+describe("model validation on restore (default): { validateBeforeRestore: true }", function () {
+    var TestSchema = new Schema({
+        name: { type: String, required: true }
+    }, { collection: 'mongoose_restore_test' });
+    TestSchema.plugin(mongoose_delete);
+    var TestModel = mongoose.model('Test17_restore', TestSchema);
+
+    beforeEach(function (done) {
+        TestModel.create(
+            [
+                { name: 'Luke Skywalker' }
+            ], done);
+    });
+
+    afterEach(function (done) {
+        mongoose.connection.db.dropCollection("mongoose_restore_test", done);
+    });
+
+    it("restore() -> should raise ValidationError error", function (done) {
+        TestModel.findOne({ name: 'Luke Skywalker' }, function (err, luke) {
+            should.not.exist(err);
+            luke.name = "";
+
+            luke.restore(function (err) {
+                err.should.exist;
+                err.name.should.exist;
+                err.name.should.equal('ValidationError');
+                done();
+            });
+        });
+    });
+});
+
 describe("mongoose_delete indexFields options", function () {
 
     it("all fields must have index: { indexFields: true }", function (done) {
