@@ -296,6 +296,11 @@ module.exports = function (schema, options) {
         this.deleted = false;
         this.deletedAt = undefined;
         this.deletedBy = undefined;
+
+        if (options.validateBeforeRestore === false) {
+            return this.save({ validateBeforeSave: false }, callback);
+        }
+
         return this.save(callback);
     };
 
