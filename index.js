@@ -1,7 +1,5 @@
 var mongoose = require('mongoose'),
-    Schema = mongoose.Schema,
-    Model = mongoose.Model,
-    util = require('util');
+    Model = mongoose.Model;
 
 /**
  * This code is taken from official mongoose repository
@@ -42,6 +40,22 @@ function parseUpdateArguments (conditions, doc, options, callback) {
     return args;
 }
 
+/**
+ * Parses the index fields from the provided options.
+ *
+ * @param {Object} options - The options to parse index fields from.
+ * @param {string|boolean|Array} [options.indexFields] - The fields to index. Accepts a string, a boolean, or an array.
+ *    If a string is provided and is 'all', all index fields are set to true.
+ *    If a boolean is provided and is true, all index fields are set to true.
+ *    If an array is provided, index fields are set to true if their names are included in the array.
+ *
+ * @returns {Object} The parsed index fields. Includes the following properties:
+ *    - deleted {boolean} - Whether to index the 'deleted' field.
+ *    - deletedAt {boolean} - Whether to index the 'deletedAt' field.
+ *    - deletedBy {boolean} - Whether to index the 'deletedBy' field.
+ *
+ * @throws {TypeError} If options.indexFields is provided and is not a string, a boolean, or an array.
+ */
 function parseIndexFields (options) {
     var indexFields = {
         deleted: false,
@@ -80,15 +94,13 @@ module.exports = function (schema, options) {
     var indexFields = parseIndexFields(options);
 
     var typeKey = schema.options.typeKey;
-    var mongooseMajorVersion = +mongoose.version[0]; // 4, 5...
-    var mainUpdateMethod = mongooseMajorVersion < 5 ? 'update' : 'updateMany';
-    var mainUpdateWithDeletedMethod = mainUpdateMethod + 'WithDeleted';
+    var mainUpdateWithDeletedMethod = 'updateManyWithDeleted';
 
-    function updateDocumentsByQuery(schema, conditions, updateQuery, callback) {
-        if (schema[mainUpdateWithDeletedMethod]) {
-            return schema[mainUpdateWithDeletedMethod](conditions, updateQuery, { multi: true }, callback);
+    function updateDocumentsByQuery(schema, conditions, updateQuery) {
+        if (schema['updateManyWithDeleted']) {
+            return schema['updateManyWithDeleted'](conditions, updateQuery, { multi: true });
         } else {
-            return schema[mainUpdateMethod](conditions, updateQuery, { multi: true }, callback);
+            return schema['updateMany'](conditions, updateQuery, { multi: true });
         }
     }
 
@@ -99,7 +111,12 @@ module.exports = function (schema, options) {
     }
 
     if (options.deletedBy === true) {
-        schema.add({ deletedBy: createSchemaObject(typeKey, options.deletedByType || Schema.Types.ObjectId, { index: indexFields.deletedBy }) });
+        schema.add({
+            deletedBy: {
+                [typeKey]: options.deletedByType || mongoose.Types.ObjectId,
+                index: indexFields.deletedBy,
+            }
+        });
     }
 
     var use$neOperator = true;
@@ -116,7 +133,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany', 'aggregate'];
+        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'updateOne', 'updateMany', 'aggregate'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -152,12 +169,6 @@ module.exports = function (schema, options) {
         finalList.forEach(function(method) {
             if (['count', 'countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
                 var modelMethodName = method;
-
-                // countDocuments do not exist in Mongoose v4
-                /* istanbul ignore next */
-                if (mongooseMajorVersion < 5 && method === 'countDocuments' && typeof Model.countDocuments !== 'function') {
-                    modelMethodName = 'count';
-                }
 
                 schema.statics[method] = function () {
                     var query = Model[modelMethodName].apply(this, arguments);
@@ -230,15 +241,11 @@ module.exports = function (schema, options) {
         });
     }
 
-    schema.methods.delete = function (deletedBy, cb) {
-        if (typeof deletedBy === 'function') {
-          cb = deletedBy;
-          deletedBy = null;
-        }
-
+    schema.methods.delete = function (deletedBy) {
         this.deleted = true;
 
         if (schema.path('deletedAt')) {
+            // TODO: Allow custom method for deletedAt
             this.deletedAt = new Date();
         }
 
@@ -247,23 +254,13 @@ module.exports = function (schema, options) {
         }
 
         if (options.validateBeforeDelete === false) {
-            return this.save({ validateBeforeSave: false }, cb);
+            return this.save({ validateBeforeSave: false });
         }
 
-        return this.save(cb);
+        return this.save();
     };
 
-    schema.statics.delete =  function (conditions, deletedBy, callback) {
-        if (typeof deletedBy === 'function') {
-            callback = deletedBy;
-            conditions = conditions;
-            deletedBy = null;
-        } else if (typeof conditions === 'function') {
-            callback = conditions;
-            conditions = {};
-            deletedBy = null;
-        }
-
+    schema.statics.deleteMany =  function (conditions, deletedBy) {
         var doc = {
             deleted: true
         };
@@ -276,10 +273,11 @@ module.exports = function (schema, options) {
             doc.deletedBy = deletedBy;
         }
 
-        return updateDocumentsByQuery(this, conditions, doc, callback);
+        // TODO: we need to check a way to return the deleted response { acknowledged, deletedCount }
+        return updateDocumentsByQuery(this, conditions, doc);
     };
 
-    schema.statics.deleteById =  function (id, deletedBy, callback) {
+    schema.statics.deleteById =  function (id, deletedBy) {
         if (arguments.length === 0 || typeof id === 'function') {
             var msg = 'First argument is mandatory and must not be a function.';
             throw new TypeError(msg);
@@ -289,28 +287,18 @@ module.exports = function (schema, options) {
             _id: id
         };
 
-        return this.delete(conditions, deletedBy, callback);
+        return this.deleteMany(conditions, deletedBy);
     };
 
-    schema.methods.restore = function (callback) {
-        this.deleted = false;
-        this.deletedAt = undefined;
-        this.deletedBy = undefined;
-        return this.save(callback);
-    };
-
-    schema.statics.restore =  function (conditions, callback) {
-        if (typeof conditions === 'function') {
-            callback = conditions;
-            conditions = {};
-        }
-
+    schema.statics.restoreMany =  function (conditions) {
         var doc = {
             deleted: false,
-            deletedAt: undefined,
-            deletedBy: undefined
+            $unset: {
+                deletedAt: 1,
+                deletedBy: 1
+            }
         };
 
-        return updateDocumentsByQuery(this, conditions, doc, callback);
+        return updateDocumentsByQuery(this, conditions, doc);
     };
 };

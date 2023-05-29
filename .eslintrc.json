@@ -1,0 +1,20 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 8
+  },
+  "env": {
+    "node": true,
+    "es2021": true
+  },
+  "rules": {
+    "no-undef": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.js"],
+      "env": {
+        "mocha": true
+      }
+    }
+  ]
+}
