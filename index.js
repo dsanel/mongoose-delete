@@ -306,9 +306,11 @@ module.exports = function (schema, options) {
         }
 
         var doc = {
-            deleted: false,
-            deletedAt: undefined,
-            deletedBy: undefined
+            $unset:{
+                deleted: true,
+                deletedAt: true,
+                deletedBy: true
+            }
         };
 
         return updateDocumentsByQuery(this, conditions, doc, callback);
