@@ -16,6 +16,7 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
   - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, countDocuments, find, findOne, findOneAndUpdate, update, updateOne, updateMany__)
   - [For overridden methods we have two additional methods](#method-overridden): __methodDeleted__ and __methodWithDeleted__
   - [Disable model validation on delete](#disable-model-validation-on-delete)
+  - [Disable model validation on restore](#disable-model-validation-on-restore)
   - [Option to create index on delete fields](#create-index-on-fields) (__deleted__, __deletedAt__, __deletedBy__)
   - Option to disable use of `$ne` operator using `{use$neOperator: false}`. Before you start to use this option please check [#50](https://github.com/dsanel/mongoose-delete/issues/50).
   - Option to override **aggregate**.
@@ -302,6 +303,29 @@ PetSchema.plugin(mongoose_delete, { validateBeforeDelete: false });
 // http://mongoosejs.com/docs/guide.html#validateBeforeSave
 
 ```
+
+### Disable model validation on restore
+
+```javascript
+var mongoose_delete = require('mongoose-delete');
+
+var PetSchema = new Schema({
+    name: { type: String, required: true }
+});
+
+// By default, validateBeforeRestore is set to true
+PetSchema.plugin(mongoose_delete);
+// the previous line is identical to next line
+PetSchema.plugin(mongoose_delete, { validateBeforeRestore: true });
+
+// To disable model validation on restore, set validateBeforeRestore option to false
+PetSchema.plugin(mongoose_delete, { validateBeforeRestore: false });
+
+// NOTE: This is based on existing Mongoose validateBeforeSave option
+// http://mongoosejs.com/docs/guide.html#validateBeforeSave
+```
+
+
 
 ### Create index on fields
 

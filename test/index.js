@@ -1849,3 +1849,69 @@ describe("mongoose_delete find method overridden with populate", function () {
         }
     });
 });
+
+describe("model validation on restore: { validateBeforeRestore: false }", function () {
+    var TestSchema = new Schema({
+        name: { type: String, required: true }
+    }, { collection: 'mongoose_restore_test' });
+    TestSchema.plugin(mongoose_delete, { validateBeforeRestore: false });
+    var TestModel = mongoose.model('Test18_restore', TestSchema);
+
+    beforeEach(async function () {
+        await TestModel.create(
+          [
+              { name: 'Luke Skywalker' }
+          ]
+        );
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_restore_test");
+    });
+
+    it("restore() -> not raise ValidationError error", async function () {
+        try {
+            const luke = await TestModel.findOne({ name: 'Luke Skywalker' });
+            luke.name = "";
+            await luke.restore();
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+});
+
+describe("model validation on restore (default): { validateBeforeRestore: true }", function () {
+    var TestSchema = new Schema({
+        name: { type: String, required: true }
+    }, { collection: 'mongoose_restore_test' });
+    TestSchema.plugin(mongoose_delete);
+    var TestModel = mongoose.model('Test17_restore', TestSchema);
+
+    beforeEach(async function () {
+        await TestModel.create(
+          [
+              { name: 'Luke Skywalker' }
+          ]
+        );
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_restore_test");
+    });
+
+    it("restore() -> should raise ValidationError error", async function () {
+        try {
+            const luke = await TestModel.findOne({ name: 'Luke Skywalker' });
+            try {
+                luke.name = "";
+                await luke.restore();
+            } catch (e) {
+                e.should.exist;
+                e.name.should.exist;
+                e.name.should.equal('ValidationError');
+            }
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+});
