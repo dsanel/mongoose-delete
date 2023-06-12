@@ -4,12 +4,13 @@ on:
     push:
 jobs:
   test:
-    runs-on: ubuntu-18.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        node: [12, 14, 16]
-        mongodb-version: ['4.0', '4.2', '4.4']
+        os: [ubuntu-20.04, ubuntu-22.04]
+        node: [14, 16, 18]
+        mongodb-version: ['4.4.18', '5.0.14', '6.0.4']
     name: Node ${{ matrix.node }} MongoDB ${{ matrix.mongodb-version }}
     steps:
     - name: Git checkout
