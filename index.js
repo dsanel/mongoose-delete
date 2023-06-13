@@ -157,12 +157,6 @@ module.exports = function (schema, options) {
             if (['count', 'countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
                 var modelMethodName = method;
 
-                // countDocuments do not exist in Mongoose v4
-                /* istanbul ignore next */
-                if (mongooseMajorVersion < 5 && method === 'countDocuments' && typeof Model.countDocuments !== 'function') {
-                    modelMethodName = 'count';
-                }
-
                 schema.statics[method] = function () {
                     var query = Model[modelMethodName].apply(this, arguments);
                     if (!arguments[2] || arguments[2].withDeleted !== true) {
