@@ -230,17 +230,20 @@ Pet.restore({age:10}).exec(function (err, result) { ... });
 
 We have the option to override all standard methods or only specific methods. Overridden methods will exclude deleted documents from results, documents that have ```deleted = true```. Every overridden method will have two additional methods, so we will be able to work with deleted documents.
 
-| only not deleted documents | only deleted documents  | all documents               |
-|----------------------------|-------------------------|-----------------------------|
-| count()                    | countDeleted            | countWithDeleted            |
-| countDocuments()           | countDocumentsDeleted   | countDocumentsWithDeleted   |
-| find()                     | findDeleted             | findWithDeleted             |
-| findOne()                  | findOneDeleted          | findOneWithDeleted          |
-| findOneAndUpdate()         | findOneAndUpdateDeleted | findOneAndUpdateWithDeleted |
-| update()                   | updateDeleted           | updateWithDeleted           |
-| updateOne()                | updateOneDeleted        | updateOneWithDeleted        |
-| updateMany()               | updateManyDeleted       | updateManyWithDeleted       |
-| aggregate()                | aggregateDeleted        | aggregateWithDeleted        |
+| only not deleted documents | only deleted documents             | all documents                          |
+|----------------------------|------------------------------------|----------------------------------------|
+| count()                    | countDeleted                       | countWithDeleted                       |
+| countDocuments()           | countDocumentsDeleted              | countDocumentsWithDeleted              |
+| find()                     | findDeleted                        | findWithDeleted                        |
+| findOne()                  | findOneDeleted                     | findOneWithDeleted                     |
+| findOneAndUpdate()         | findOneAndUpdateDeleted            | findOneAndUpdateWithDeleted            |
+| update()                   | updateDeleted                      | updateWithDeleted                      |
+| updateOne()                | updateOneDeleted                   | updateOneWithDeleted                   |
+| updateMany()               | updateManyDeleted                  | updateManyWithDeleted                  |
+| aggregate()                | aggregateDeleted                   | aggregateWithDeleted                   |
+| findById()                 | Please use findOne                 | Please use findOneWithDeleted          |
+| findByIdAndUpdate()        | Please use findOneAndUpdateDeleted | Please use findOneAndUpdateWithDeleted |
+
 
 ### Examples how to override one or multiple methods
 
