@@ -1,3 +1,8 @@
+## [v1.0.1]
+> June 13, 2023
+- fix: aggregateWithDeleted returns no result with Discriminators #130
+- Update `devDependencies` to `"mongoose": "^7.2.4"`
+
 ## [v1.0.0]
 > June 12, 2023
 
