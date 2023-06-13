@@ -137,12 +137,16 @@ module.exports = function (schema, options) {
 
         if (finalList.indexOf('aggregate') > -1) {
             schema.pre('aggregate', function() {
-                var firsMatchStr = JSON.stringify(this.pipeline()[0]);
+                var firstMatch = this.pipeline()[0];
 
-                if ( firsMatchStr !== '{"$match":{"deleted":{"$ne":false}}}' ) {
-                    if (firsMatchStr === '{"$match":{"showAllDocuments":"true"}}') {
+                if(firstMatch.$match?.deleted?.$ne !== false){
+                    if(firstMatch.$match?.showAllDocuments === 'true'){
+                        var {showAllDocuments, ...replacement} = firstMatch.$match;
                         this.pipeline().shift();
-                    } else {
+                        if(Object.keys(replacement).length > 0){
+                            this.pipeline().unshift({ $match: replacement });
+                        }
+                    }else{
                         this.pipeline().unshift({ $match: { deleted: { '$ne': true } } });
                     }
                 }

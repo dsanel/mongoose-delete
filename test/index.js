@@ -1745,6 +1745,64 @@ describe("aggregate methods: { overrideMethods: ['aggregate'] }", function () {
     });
 });
 
+describe("aggregate methods & discriminator: { overrideMethods: ['aggregate'] }", function () {
+    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_aggregate', discriminatorKey:'kind' });
+    TestSchema.plugin(mongoose_delete, { overrideMethods: ['aggregate'] });
+
+    var TestModel = mongoose.model('Test6_Aggregate', TestSchema);
+    var DiscriminatorTestModel = TestModel.discriminator('DiscriminatorTest',new Schema({ age: Number }))
+
+    beforeEach(async function () {
+        await DiscriminatorTestModel.create(
+          [
+              { name: 'Lando Calrissian', age: 46, deleted: true },
+              { name: 'Han Solo', age: 44 },
+              { name: 'Jabba Desilijic Tiure', age:617, deleted: true },
+              { name: 'Boba Fett', age: 61 },
+          ]);
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_delete_test_aggregate");
+    });
+
+    it("aggregateWithDeleted([{ $match: { age:{ $gte: 50 } } }]) -> should return deleted documents from discriminator (pipeline)", async function () {
+        try {
+            var documents = await DiscriminatorTestModel
+              .aggregateWithDeleted([{ $match: { age:{ $gte: 50 } } }])
+              .project({ name : 1, age:1 });
+
+            documents.length.should.equal(2);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("aggregate([{ $match: { age:{ $gte: 50 } } }]) -> should return non-deleted documents from discriminator (pipeline)", async function () {
+        try {
+            var documents = await DiscriminatorTestModel
+              .aggregate([{ $match: { age:{ $gte: 50 } } }])
+              .project({ name : 1, age:1 });
+
+            documents.length.should.equal(1);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("aggregateDeleted([{ $match: { age:{ $gte: 50 } } }]) -> should return ONLY deleted documents from discriminator (pipeline)", async function () {
+        try {
+            var documents = await DiscriminatorTestModel
+              .aggregateDeleted([{ $match: { age:{ $gte: 50 } } }])
+              .project({ name : 1, age: 1 });
+
+            documents.length.should.equal(1);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+});
+
 describe("mongoose_delete find method overridden with populate", function () {
     var TestPopulateSchema1 = new Schema(
       { name: String },
@@ -1915,3 +1973,4 @@ describe("model validation on restore (default): { validateBeforeRestore: true }
         }
     });
 });
+
