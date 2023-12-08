@@ -1,6 +1,6 @@
 {
   "name": "mongoose-delete",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Mongoose soft delete plugin",
   "author": "Sanel Deljkic <dsanel@gmail.com> (http://dsanel.github.io/)",
   "main": "index.js",
@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/dsanel/mongoose-delete",
   "peerDependencies": {
-    "mongoose": "5.x || 6.x || 7.x"
+    "mongoose": "5.x || 6.x || 7.x || 8.x"
   },
   "devDependencies": {
     "chai": "^4.3.7",
