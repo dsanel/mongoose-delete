@@ -26,12 +26,12 @@
   },
   "homepage": "https://github.com/dsanel/mongoose-delete",
   "peerDependencies": {
-    "mongoose": "5.x || 6.x || 7.x || 8.x"
+    "mongoose": "8.x"
   },
   "devDependencies": {
-    "chai": "^4.3.7",
+    "chai": "^4.3.10",
     "mocha": "^10.2.0",
     "mongoose": "^8.1.1",
-    "nyc": "^15.0.0"
+    "nyc": "^15.1.0"
   }
 }

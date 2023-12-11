@@ -1,7 +1,6 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-    Model = mongoose.Model,
-    util = require('util');
+    Model = mongoose.Model;
 
 /**
  * This code is taken from official mongoose repository
@@ -116,7 +115,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany', 'aggregate'];
+        var overridableMethods = ['countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany', 'aggregate'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -154,7 +153,7 @@ module.exports = function (schema, options) {
         }
 
         finalList.forEach(function(method) {
-            if (['count', 'countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
+            if (['countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
                 var modelMethodName = method;
 
                 schema.statics[method] = function () {
