@@ -1011,6 +1011,33 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
             should.not.exist(err);
         }
     });
+
+    it("distinct() -> should return 1 documents", async function () {
+        try {
+            const doc = await TestModel.distinct('name');
+            doc.should.have.members(['Darth Vader']);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("distinctDeleted() -> should return 2 documents", async function () {
+        try {
+            const doc = await TestModel.distinctDeleted('name');
+            doc.should.have.members(['Obi-Wan Kenobi', 'Luke Skywalker']);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("distinctWithDeleted() -> should return 3 documents", async function () {
+        try {
+            const doc = await TestModel.distinctWithDeleted('name');
+            doc.should.have.members(['Obi-Wan Kenobi', 'Darth Vader', 'Luke Skywalker']);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
 });
 
 describe("check the existence of override static methods: { overrideMethods: true }", function () {
