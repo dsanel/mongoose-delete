@@ -1140,6 +1140,18 @@ describe("check the existence of override static methods: { overrideMethods: tru
     it("updateManyWithDeleted() -> method should exist", function () {
         expect(TestModel.updateManyWithDeleted).to.exist;
     });
+
+    it("distinct() => method should exist", function () {
+        expect(TestModel.distinct).to.exist;
+    });
+
+    it("distinctDeleted() => method should exist", function () {
+        expect(TestModel.distinctDeleted).to.exist;
+    });
+
+    it("distinctWithDeleted() => method should exist", function () {
+        expect(TestModel.distinctWithDeleted).to.exist;
+    });
 });
 
 describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany'] }", function () {
