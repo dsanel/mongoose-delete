@@ -667,6 +667,15 @@ describe("check not overridden static methods", function () {
             should.not.exist(err);
         }
     });
+
+    it("distinct() -> should return 3 documents", async function () {
+        try {
+            const doc = await TestModel.distinct('name');
+            doc.should.have.members(['Obi-Wan Kenobi', 'Darth Vader', 'Luke Skywalker']);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
 });
 
 describe("check overridden static methods: { overrideMethods: 'all' }", function () {
