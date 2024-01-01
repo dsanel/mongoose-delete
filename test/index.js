@@ -1154,9 +1154,9 @@ describe("check the existence of override static methods: { overrideMethods: tru
     });
 });
 
-describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany'] }", function () {
+describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany', 'distinct'] }", function () {
     var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
-    TestSchema.plugin(mongoose_delete, {overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany']});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany', 'distinct']});
     var TestModel = mongoose.model('Test7', TestSchema);
 
     it("testError() -> method should not exist", function () {
@@ -1257,6 +1257,18 @@ describe("check the existence of override static methods: { overrideMethods: ['t
 
     it("updateManyWithDeleted() -> method should exist", function () {
         expect(TestModel.updateManyWithDeleted).to.exist;
+    });
+
+    it("distinct() => method should exist", function () {
+        expect(TestModel.distinct).to.exist;
+    });
+
+    it("distinctDeleted() => method should exist", function () {
+        expect(TestModel.distinctDeleted).to.exist;
+    });
+
+    it("distinctWithDeleted() => method should exist", function () {
+        expect(TestModel.distinctWithDeleted).to.exist;
     });
 });
 
