@@ -9,8 +9,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, ubuntu-22.04]
-        node: [14, 16, 18]
-        mongodb-version: ['4.4.18', '5.0.14', '6.0.4']
+        node: [16, 18, 20]
+        mongodb-version: ['4.4.18', '5.0.14', '6.0.4']        
     name: Node ${{ matrix.node }} MongoDB ${{ matrix.mongodb-version }}
     steps:
     - name: Git checkout

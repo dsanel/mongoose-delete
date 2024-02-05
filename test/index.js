@@ -46,7 +46,7 @@ chai.use(function (_chai, utils) {
 });
 
 before(async function () {
-    await mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test', {useNewUrlParser: true, useUnifiedTopology: true});
+    await mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test');
 });
 
 after(async function () {
@@ -568,10 +568,13 @@ describe("check not overridden static methods", function () {
         await mongoose.connection.db.dropCollection("mongoose_delete_test");
     });
 
+    // https://mongoosejs.com/docs/migrating_to_8.html#removed-count
     it("count() -> should return 3 documents", async function () {
         try {
-            const count = await TestModel.count();
-            count.should.equal(3);
+            if (mongooseMajorVersion < 8) {
+                const count = await TestModel.count();
+                count.should.equal(3);
+            }
         } catch (err) {
             should.not.exist(err);
         }

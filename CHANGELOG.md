@@ -1,3 +1,10 @@
+## [v1.0.2]
+> February 5, 2024
+- Update `devDependencies` to `"mongoose": "^8.1.1"`
+- `peerDependencies` for `mongoose` set to `"5.x || 6.x || 7.x || 8.x"` ([RajatJain4061](https://github.com/RajatJain4061)) [#148](https://github.com/dsanel/mongoose-delete/pull/148)
+- fix test: count() -> should return 3 documents
+
+
 ## [v1.0.1]
 > June 13, 2023
 - fix: aggregateWithDeleted returns no result with Discriminators #130
