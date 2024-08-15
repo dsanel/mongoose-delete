@@ -309,8 +309,10 @@ module.exports = function (schema, options) {
         }
 
         var doc = {
-            $unset:{
-                deleted: true,
+            $set: {
+                deleted: false,
+            },
+            $unset: {
                 deletedAt: true,
                 deletedBy: true
             }
