@@ -308,15 +308,26 @@ module.exports = function (schema, options) {
             conditions = {};
         }
 
-        var doc = {
-            $set: {
-                deleted: false,
-            },
-            $unset: {
-                deletedAt: true,
-                deletedBy: true
+        var doc
+        if (use$neOperator) {
+            doc = {
+                $unset: {
+                    deleted: true,
+                    deletedAt: true,
+                    deletedBy: true
+                }
             }
-        };
+        } else {
+            doc = {
+                $set: {
+                    deleted: false,
+                },
+                $unset: {
+                    deletedAt: true,
+                    deletedBy: true
+                }
+            };
+        }
 
         return updateDocumentsByQuery(this, conditions, doc, callback);
     };
