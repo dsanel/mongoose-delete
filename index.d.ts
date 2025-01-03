@@ -101,13 +101,14 @@ declare namespace MongooseDelete {
         ): mongoose.Query<ReturnType<mongoose.Model<T>["deleteOne"]>, T, QueryHelpers> & QueryHelpers;
     }
 
-    interface SoftDeleteDocument extends Omit<mongoose.Document, "delete">, SoftDeleteInterface {
+    type SoftDeleteDocument<T = unknown, TQueryHelpers = any, DocType = any> = Omit<mongoose.Document<T, TQueryHelpers, DocType>, "delete"> &
+        MongooseDelete.SoftDeleteInterface & {
         /** Soft delete this document */
         delete(
-            deleteBy?: string | mongoose.Types.ObjectId | Callback<this>,
-            fn?: Callback<this>,
-        ): Promise<this>;
-        restore(fn?: Callback<this>): Promise<this>;
+            deleteBy?: string | mongoose.Types.ObjectId | Callback<SoftDeleteDocument<T, TQueryHelpers, DocType>>,
+            fn?: Callback<SoftDeleteDocument<T, TQueryHelpers, DocType>>,
+        ): Promise<SoftDeleteDocument<T, TQueryHelpers, DocType>>;
+        restore(fn?: Callback<SoftDeleteDocument<T, TQueryHelpers, DocType>>): Promise<SoftDeleteDocument<T, TQueryHelpers, DocType>>;
     }
     interface SoftDeleteInterface {
         /** Soft deleted ? */
