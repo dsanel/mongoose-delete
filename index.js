@@ -1,7 +1,6 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-    Model = mongoose.Model,
-    util = require('util');
+    Model = mongoose.Model;
 
 /**
  * This code is taken from official mongoose repository
@@ -83,6 +82,12 @@ module.exports = function (schema, options) {
     var mongooseMajorVersion = +mongoose.version[0]; // 4, 5...
     var mainUpdateMethod = mongooseMajorVersion < 5 ? 'update' : 'updateMany';
     var mainUpdateWithDeletedMethod = mainUpdateMethod + 'WithDeleted';
+
+    function adjustCallbackForMongooseVersion(callback) {
+        // Since Mongoose 7, callback support has been fully removed in favor of Promises and async/await.
+        // See: https://mongoosejs.com/docs/migrating_to_7.html#dropped-callback-support
+        return mongooseMajorVersion >= 7 ? undefined : callback;
+    }
 
     function updateDocumentsByQuery(schema, conditions, updateQuery, callback) {
         if (schema[mainUpdateWithDeletedMethod]) {
@@ -228,11 +233,13 @@ module.exports = function (schema, options) {
         });
     }
 
-    schema.methods.delete = function (deletedBy, cb) {
+    schema.methods.delete = function (deletedBy, callback) {
         if (typeof deletedBy === 'function') {
-          cb = deletedBy;
+          callback = deletedBy;
           deletedBy = null;
         }
+
+        callback = adjustCallbackForMongooseVersion(callback);
 
         this.deleted = true;
 
@@ -245,10 +252,10 @@ module.exports = function (schema, options) {
         }
 
         if (options.validateBeforeDelete === false) {
-            return this.save({ validateBeforeSave: false }, cb);
+            return this.save({ validateBeforeSave: false }, callback);
         }
 
-        return this.save(cb);
+        return this.save(callback);
     };
 
     schema.statics.delete =  function (conditions, deletedBy, callback) {
@@ -261,6 +268,8 @@ module.exports = function (schema, options) {
             conditions = {};
             deletedBy = null;
         }
+
+        callback = adjustCallbackForMongooseVersion(callback);
 
         var doc = {
             deleted: true
@@ -283,6 +292,8 @@ module.exports = function (schema, options) {
             throw new TypeError(msg);
         }
 
+        callback = adjustCallbackForMongooseVersion(callback);
+
         var conditions = {
             _id: id
         };
@@ -294,6 +305,8 @@ module.exports = function (schema, options) {
         this.deleted = false;
         this.deletedAt = undefined;
         this.deletedBy = undefined;
+
+        callback = adjustCallbackForMongooseVersion(callback);
 
         if (options.validateBeforeRestore === false) {
             return this.save({ validateBeforeSave: false }, callback);
@@ -307,6 +320,8 @@ module.exports = function (schema, options) {
             callback = conditions;
             conditions = {};
         }
+
+        callback = adjustCallbackForMongooseVersion(callback);
 
         var doc = {
             $unset:{
