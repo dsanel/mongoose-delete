@@ -230,6 +230,167 @@ describe("mongoose_delete plugin without options, using option: typeKey", functi
     });
 });
 
+describe('mongoose_delete plugin with pre delete middleware', function () {
+    var Test1Schema = new Schema(
+        { name: String },
+        { collection: 'mongoose_delete_test1' }
+    );
+    Test1Schema.pre('delete', async function () {
+        if (this.save) {
+            this.name = 'masked-name';
+            await this.save();
+        }
+    });
+    Test1Schema.plugin(mongoose_delete);
+    var Test1 = mongoose.model('TestModelWithPreDeleteMiddleware', Test1Schema);
+
+    var puffy1 = null;
+    var puffy2 = null;
+
+    beforeEach(async function () {
+        const created = await Test1.create([
+            { name: 'Puffy1' },
+            { name: 'Puffy2' }
+        ]);
+
+        puffy1 = { ...created[0]._doc };
+        puffy2 = { ...created[1]._doc };
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection('mongoose_delete_test1');
+    });
+
+    it('delete() -> should set deleted:true and name:masked-name', async function () {
+        try {
+            const puffy = await Test1.findOne({ name: 'Puffy1' });
+            const success = await puffy.delete('testman');
+            success.deleted.should.equal(true);
+            success.name.should.equal('masked-name');
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("delete() -> should not save 'deletedAt' value", async function () {
+        try {
+            const puffy = await Test1.findOne({ name: 'Puffy1' });
+            const success = await puffy.delete();
+            should.not.exist(success.deletedAt);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("deleteById() -> should set deleted:true and not save 'deletedAt'", async function () {
+        try {
+            const documents = await Test1.deleteById(puffy2._id);
+            expect(documents).to.be.mongoose_ok();
+            expect(documents).to.be.mongoose_count(1);
+
+            const doc = await Test1.findOne({ name: 'Puffy2' });
+            doc.deleted.should.equal(true);
+            should.not.exist(doc.deletedAt);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it('deleteById() -> should throw an exception: first argument error', async function () {
+        try {
+            await Test1.deleteById();
+        } catch (error) {
+            expect(error.message).to.equal(
+                'First argument is mandatory and must not be a function.'
+            );
+        }
+    });
+
+    it('restoreMany() -> should set deleted:false', async function () {
+        try {
+            await Test1.restore({ name: 'Puffy1' });
+            const puffy = await Test1.findOne({ name: 'Puffy1' });
+
+            puffy.deleted.should.equal(false);
+            should.not.exist(puffy.deletedBy);
+        } catch (e) {
+            should.not.exist(e);
+        }
+    });
+});
+
+describe("mongoose_delete plugin with pre delete middleware and options: { deletedBy : true }", function () {
+
+    var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test3'});
+    TestSchema.pre('delete', async function () {
+        if (this.save) {
+            this.name = 'masked-name';
+            await this.save();
+        }
+    });
+    TestSchema.plugin(mongoose_delete, { deletedBy: true });
+    var Test3 = mongoose.model('TestModelWithPreDeleteMiddlewareAndDeleteBy', TestSchema);
+
+    var puffy1 = null;
+    var puffy2 = null;
+
+    beforeEach(async function () {
+        const created = await Test3.create(
+          [
+              { name: 'Puffy1' },
+              { name: 'Puffy2' },
+              { name: 'Puffy3', deleted: true, deletedBy: "53da93b16b4a6670076b16bf" }
+          ]
+        );
+
+        puffy1 = { ...created[0]._doc };
+        puffy2 = { ...created[1]._doc };
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_delete_test3");
+    });
+
+    var userId = getNewObjectId("53da93b16b4a6670076b16bf");
+
+    it("delete() -> should save 'deletedBy' key and mask name", async function () {
+        try {
+            const puffy = await Test3.findOne({ name: 'Puffy1' });
+            const success = await puffy.delete(userId);
+            success.deletedBy.should.equal(userId);
+            success.name.should.equal('masked-name');
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("deleteById() -> should save `deletedBy` key", async function () {
+        try {
+            const documents = await Test3.deleteById(puffy2._id, userId)
+
+            expect(documents).to.be.mongoose_ok();
+            expect(documents).to.be.mongoose_count(1);
+
+            const doc = await Test3.findOne({name: 'Puffy2'});
+            doc.deleted.should.equal(true);
+            doc.deletedBy.toString().should.equal(userId.toString());
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("restore() -> should set deleted:false and delete `deletedBy` key", async function () {
+        try {
+            const puffy = await Test3.findOne({ name: 'Puffy3' });
+            const success = await puffy.restore();
+            success.deleted.should.equal(false);
+            should.not.exist(success.deletedBy);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+});
+
 describe("mongoose_delete with options: { deletedAt : true }", function () {
     var Test2Schema = new Schema({name: String}, {collection: 'mongoose_delete_test2'});
     Test2Schema.plugin(mongoose_delete, { deletedAt: true });
