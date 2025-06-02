@@ -1,0 +1,59 @@
+name: Release Workflow
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    name: Release Job
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://npm.pkg.github.com/"
+
+      - name: Get version and changelog
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.github-token }}
+          dry_run: true
+          release_branches: master
+
+      - name: Setup git config
+        run: |
+          git config --local user.name "$(git log -n 1 --pretty=format:%an)"
+          git config --local user.email "$(git log -n 1 --pretty=format:%ae)"
+
+      - name: Tag a release
+        # The next action will not tag master, so tagging it explicitly here
+        run: |
+          git checkout master
+          git tag -a "${{ steps.tag_version.outputs.new_tag }}" -m "Release ${{ steps.tag_version.outputs.new_tag }}"
+          git push origin "${{ steps.tag_version.outputs.new_tag }}"
+
+      - name: Create a release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          draft: false
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.outputs.changelog }}
+
+      - name: Publish package
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
