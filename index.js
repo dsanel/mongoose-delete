@@ -251,7 +251,7 @@ module.exports = function (schema, options) {
         }
 
         if (options.validateBeforeDelete === false) {
-            return this.save({ validateBeforeSave: false }, cb);
+            return this.save({ validateBeforeSave: false }, callback);
         }
 
         return this.save(callback);
