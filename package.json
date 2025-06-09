@@ -1,6 +1,6 @@
 {
   "name": "@ambi-robotics/mongoose-delete",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Mongoose soft delete plugin",
   "author": "Sanel Deljkic <dsanel@gmail.com> (http://dsanel.github.io/)",
   "main": "index.js",
