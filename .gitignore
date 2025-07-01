@@ -2,6 +2,11 @@
 logs
 *.log
 
+# Environment
+.env*
+.envrc
+!.env.example
+
 # Runtime data
 pids
 *.pid

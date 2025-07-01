@@ -46,7 +46,8 @@ function parseIndexFields (options) {
     var indexFields = {
         deleted: false,
         deletedAt: false,
-        deletedBy: false
+        deletedBy: false,
+        deletedId: false,
     };
 
     if (!options.indexFields) {
@@ -58,13 +59,15 @@ function parseIndexFields (options) {
     }
 
     if (typeof(options.indexFields) === "boolean" && options.indexFields === true) {
-        indexFields.deleted = indexFields.deletedAt = indexFields.deletedBy = true;
+        indexFields.deleted = indexFields.deletedAt = indexFields.deletedBy = indexFields.deletedId = true;
     }
 
     if (Array.isArray(options.indexFields)) {
         indexFields.deleted = options.indexFields.indexOf('deleted') > -1;
         indexFields.deletedAt = options.indexFields.indexOf('deletedAt') > -1;
         indexFields.deletedBy = options.indexFields.indexOf('deletedBy') > -1;
+        indexFields.deletedId = options.indexFields.indexOf('deletedId') > -1;
+
     }
 
     return indexFields;
@@ -101,6 +104,10 @@ module.exports = function (schema, options) {
     if (options.deletedBy === true) {
         schema.add({ deletedBy: createSchemaObject(typeKey, options.deletedByType || Schema.Types.ObjectId, { index: indexFields.deletedBy }) });
     }
+
+   if (options.deletedId === true) {
+    schema.add({ deletedId: createSchemaObject(typeKey, options.deletedIdType || Schema.Types.ObjectId, { index: indexFields.deletedId }) });
+}
 
     var use$neOperator = true;
     if (options.use$neOperator !== undefined && typeof options.use$neOperator === "boolean") {
@@ -228,10 +235,30 @@ module.exports = function (schema, options) {
         });
     }
 
-    schema.methods.delete = function (deletedBy, cb) {
-        if (typeof deletedBy === 'function') {
-          cb = deletedBy;
-          deletedBy = null;
+    schema.methods.delete = function (params, cb) {
+        let deletedBy = null;
+        let deletedId = null;
+
+        if (typeof params === 'function') {
+          cb = params;
+          params = {};
+        }
+
+        // If options is a string or ObjectId, it's the deletedBy value
+        if (typeof params === 'string' || typeof params === 'object' && !params.deletedId ||  (params && params._bsontype === 'ObjectID')) {
+            deletedBy = params;
+            params = {};
+        } else if (!params) {
+            params = {};
+        }
+        
+        // Extract deletedId and deletedBy from options if present
+        if (params.deletedId) {
+        deletedId = params.deletedId;
+        }
+        
+        if (params.deletedBy) {
+        deletedBy = params.deletedBy;
         }
 
         this.deleted = true;
@@ -244,6 +271,10 @@ module.exports = function (schema, options) {
             this.deletedBy = deletedBy;
         }
 
+        if (schema.path('deletedId')) {
+            this.deletedId = deletedId || deletedBy; // Use deletedId if provided, fall back to deletedBy
+        }
+
         if (options.validateBeforeDelete === false) {
             return this.save({ validateBeforeSave: false }, cb);
         }
@@ -251,15 +282,32 @@ module.exports = function (schema, options) {
         return this.save(cb);
     };
 
-    schema.statics.delete =  function (conditions, deletedBy, callback) {
-        if (typeof deletedBy === 'function') {
-            callback = deletedBy;
-            conditions = conditions;
-            deletedBy = null;
+    schema.statics.delete =  function (conditions, params, callback) {
+        let deletedBy = null;
+        let deletedId = null;
+
+
+        if (typeof params === 'function') {
+            callback = params;
+            params = {};
         } else if (typeof conditions === 'function') {
             callback = conditions;
             conditions = {};
-            deletedBy = null;
+            params = {};
+        } else if (typeof params === 'string' || typeof params === 'object' || (params && params._bsontype === 'ObjectID')) {
+            deletedBy = params;
+            params = {};
+        } else if (!params) {
+            params = {};
+        }
+
+        // Extract deletedId and deletedBy
+        if (params.deletedId) {
+            deletedId = params.deletedId;
+        }
+        
+        if (params.deletedBy) {
+            deletedBy = params.deletedBy ;
         }
 
         var doc = {
@@ -270,14 +318,20 @@ module.exports = function (schema, options) {
             doc.deletedAt = new Date();
         }
 
+
         if (schema.path('deletedBy')) {
             doc.deletedBy = deletedBy;
         }
 
+        if (schema.path('deletedId')) {
+            doc.deletedId = deletedId || deletedBy; // Use deletedId if provided, fall back to deletedBy
+        }
+
+
         return updateDocumentsByQuery(this, conditions, doc, callback);
     };
 
-    schema.statics.deleteById =  function (id, deletedBy, callback) {
+    schema.statics.deleteById =  function (id, params, callback) {
         if (arguments.length === 0 || typeof id === 'function') {
             var msg = 'First argument is mandatory and must not be a function.';
             throw new TypeError(msg);
@@ -287,13 +341,14 @@ module.exports = function (schema, options) {
             _id: id
         };
 
-        return this.delete(conditions, deletedBy, callback);
+        return this.delete(conditions, params, callback);
     };
 
     schema.methods.restore = function (callback) {
         this.deleted = false;
         this.deletedAt = undefined;
         this.deletedBy = undefined;
+        this.deletedId = undefined;
 
         if (options.validateBeforeRestore === false) {
             return this.save({ validateBeforeSave: false }, callback);
@@ -312,7 +367,8 @@ module.exports = function (schema, options) {
             $unset:{
                 deleted: true,
                 deletedAt: true,
-                deletedBy: true
+                deletedBy: true,
+                deletedId: true
             }
         };
 

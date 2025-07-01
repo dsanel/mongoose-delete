@@ -395,7 +395,6 @@ describe("mongoose_delete with options: { deletedBy : true }", function () {
     it("deleteById() -> should save `deletedBy` key", async function () {
         try {
             const documents = await Test3.deleteById(puffy2._id, userId)
-
             expect(documents).to.be.mongoose_ok();
             expect(documents).to.be.mongoose_count(1);
 
@@ -543,6 +542,157 @@ describe("mongoose_delete with options: { deletedBy : true, deletedByType: Strin
             const success = await puffy.restore();
             success.deleted.should.equal(false);
             should.not.exist(success.deletedBy);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+});
+
+describe("mongoose_delete with options: { deletedId : true }", function () {
+
+    var deletedIdSchema1 = new Schema({name: String}, {collection: 'mongoose_delete_test_deleted_id_1'});
+    deletedIdSchema1.plugin(mongoose_delete, { deletedId: true });
+    var TestDeletedId1 = mongoose.model('TestDeletedId1', deletedIdSchema1);
+
+    var puffy1 = null;
+    var puffy2 = null;
+
+    beforeEach(async function () {
+        const created = await TestDeletedId1.create(
+          [
+              { name: 'Puffy1' },
+              { name: 'Puffy2' },
+              { name: 'Puffy3', deleted: true, deletedId: "53da93b16b4a6670076b16bf" }
+          ]
+        );
+
+        puffy1 = { ...created[0]._doc };
+        puffy2 = { ...created[1]._doc };
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_delete_test_deleted_id_1");
+    });
+
+    var userId = getNewObjectId("53da93b16b4a6670076b16bf");
+
+    it("delete() -> should save 'deletedId' key", async function () {
+        try {
+            const puffy = await TestDeletedId1.findOne({ name: 'Puffy1' });
+            const success = await puffy.delete( {deletedId: userId});
+            success.deletedId.toString().should.equal(userId.toString());
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("restore() -> should set deleted:false and delete `deletedBy` key", async function () {
+        try {
+            const puffy = await TestDeletedId1.findOne({ name: 'Puffy3' });
+            const success = await puffy.restore();
+            success.deleted.should.equal(false);
+            should.not.exist(success.deletedId);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+});
+
+describe("mongoose_delete with options: { deletedId : true }, using option: typeKey", function () {
+
+    var deletedIdSchema2 = new Schema({name: String}, {collection: 'mongoose_delete_test_deleted_id_2', typeKey: '$type'});
+    deletedIdSchema2.plugin(mongoose_delete, { deletedId: true });
+    var TestDeletedId2 = mongoose.model('TestDeletedId2', deletedIdSchema2);
+
+    var puffy1 = null;
+    var puffy2 = null;
+
+    beforeEach(async function () {
+        const created = await TestDeletedId2.create(
+          [
+              { name: 'Puffy1' },
+              { name: 'Puffy2' },
+              { name: 'Puffy3', deleted: true, deletedId: "53da93b16b4a6670076b16bf" }
+          ]
+        );
+
+        puffy1 = { ...created[0]._doc };
+        puffy2 = { ...created[1]._doc };
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_delete_test_deleted_id_2");
+    });
+
+    var userId = getNewObjectId("53da93b16b4a6670076b16bf")
+
+    it("delete() -> should save `deletedId` key", async function () {
+        try {
+            const puffy = await TestDeletedId2.findOne({name: 'Puffy1'});
+            const success = await puffy.delete( {deletedId: userId});
+            success.deletedId.toString().should.equal(userId.toString());
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("restore() -> should set deleted:false and delete deletedBy key", async function () {
+        try {
+            const puffy = await TestDeletedId2.findOne({name: 'Puffy3'});
+            const success = await puffy.restore();
+            success.deleted.should.equal(false);
+            should.not.exist(success.deletedId);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+});
+
+describe("mongoose_delete with options: { deletedId : true, deletedIdType: String }", function () {
+
+    var deletedIdSchema3 = new Schema({name: String}, {collection: 'mongoose_delete_test_deleted_id_3'});
+    deletedIdSchema3.plugin(mongoose_delete, { deletedId: true, deletedIdType: String });
+    var TestDeletedId3 = mongoose.model('TestDeletedId3', deletedIdSchema3);
+
+    var puffy1 = null;
+    var puffy2 = null;
+
+    beforeEach(async function () {
+        const created = await TestDeletedId3.create(
+          [
+              { name: 'Puffy1' },
+              { name: 'Puffy2' },
+              { name: 'Puffy3', deleted: true, deletedBy: "custom_user_id_12345678" }
+          ]
+        );
+
+        puffy1 = { ...created[0]._doc };
+        puffy2 = { ...created[1]._doc };
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_delete_test_deleted_id_3");
+    });
+
+    var userIdCustom = "custom_user_id_12345678";
+
+    it("delete() -> should save deletedBy key", async function () {
+        try {
+            const puffy = await TestDeletedId3.findOne({name: 'Puffy1'});
+            const success = await puffy.delete( {deletedId: userIdCustom});
+            success.deletedId.toString().should.equal(userIdCustom.toString());
+        } catch (err) {
+            console.log(err);
+            should.not.exist(err);
+        }
+    });
+
+    it("restore() -> should set deleted:false and delete deletedBy key", async function () {
+        try {
+            const puffy = await TestDeletedId3.findOne({ name: 'Puffy3' });
+            const success = await puffy.restore();
+            success.deleted.should.equal(false);
+            should.not.exist(success.deletedId);
         } catch (err) {
             should.not.exist(err);
         }
