@@ -1911,6 +1911,81 @@ describe("mongoose_delete find method overridden with populate", function () {
     });
 });
 
+describe("mongoose_delete find method overridden with populate with multiple sub-documents", function () {
+    var TestPopulateSchema3 = new Schema(
+      { name: String },
+      { collection: 'TestPopulate3' }
+    );
+    TestPopulateSchema3.plugin(mongoose_delete, { overrideMethods: 'all' });
+    var TestPopulate3 = mongoose.model('TestPopulate3', TestPopulateSchema3);
+
+    var TestPopulateSchema4 = new Schema(
+      {
+          name: String,
+          tests: [{ type: mongoose.Types.ObjectId, ref: 'TestPopulate3' }]
+      },
+      { collection: 'TestPopulate4' }
+    );
+    TestPopulateSchema4.plugin(mongoose_delete, { overrideMethods: 'all' });
+    var TestPopulate4 = mongoose.model('TestPopulate4', TestPopulateSchema4);
+
+    beforeEach(async function () {
+        await TestPopulate3.create(
+          [
+              { name: 'Obi-Wan Kenobi', _id: getNewObjectId("53da93b16b4a6670076b16b1"), deleted: true },
+              { name: 'Darth Vader', _id: getNewObjectId("53da93b16b4a6670076b16b2") },
+              { name: 'Luke Skywalker', _id: getNewObjectId("53da93b16b4a6670076b16b3"), deleted: true },
+              { name: 'Leia Organa', _id: getNewObjectId("53da93b16b4a6670076b16b4") }
+          ]
+        );
+        await TestPopulate4.create(
+          [
+              { name: 'Student 1', tests: [getNewObjectId("53da93b16b4a6670076b16b1"), getNewObjectId("53da93b16b4a6670076b16b2")] },
+              { name: 'Student 2', tests: [getNewObjectId("53da93b16b4a6670076b16b2")] },
+              { name: 'Student 3', tests: [getNewObjectId("53da93b16b4a6670076b16b3"), getNewObjectId("53da93b16b4a6670076b16b4")], deleted: true }
+          ]
+        )
+    });
+
+    afterEach(async function () {
+       await  mongoose.connection.db.dropCollection("TestPopulate3");
+       await  mongoose.connection.db.dropCollection("TestPopulate4");
+    });
+
+    it("populate() -> should return only the deleted sub-documents using { deleted: true }", async function () {
+        try {
+            const document = await TestPopulate4
+              .findOne({ name: 'Student 1' })
+              .populate({ path: 'tests', options: { deleted: true } });
+
+            document.tests.length.should.equal(1);
+            document.tests[0].deleted.should.equal(true);
+        } catch (err) {
+            console.log(err)
+            should.not.exist(err);
+        }
+    });
+
+    it("populate() -> should return only deleted documents and sub-documents", async function () {
+        try {
+            const documents = await TestPopulate4
+              .findDeleted()
+              .populate({ path: 'tests', options: { deleted: true } })
+              .exec();
+
+            documents.length.should.equal(1);
+
+            var student3 = documents.findIndex(function(i) { return i.name === "Student 3" });
+
+            documents[student3].tests.length.should.equal(1);
+            documents[student3].tests[0].deleted.should.equal(true);
+        } catch (err) {
+            console.log(err)
+            should.not.exist(err);
+        }
+    });
+});
+
 describe("model validation on restore: { validateBeforeRestore: false }", function () {
     var TestSchema = new Schema({
         name: { type: String, required: true }
