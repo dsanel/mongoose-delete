@@ -10,7 +10,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
         node: [16, 18, 20, 22, 24]
-        mongodb-version: ['6.0.15', '7.0.12', '8.2.0']
+        mongodb-version: ['6.0', '7.0', '8.0']
     name: Node ${{ matrix.node }} MongoDB ${{ matrix.mongodb-version }}
     steps:
     - name: Git checkout
