@@ -1,3 +1,12 @@
+## [v1.0.3]
+> November 5, 2025
+- Update `devDependencies`: `chai`, `mocha`, `nyc`
+- Mongoose 7+ Callback Fix ([tomLadder](https://github.com/tomLadder)) [#163](https://github.com/dsanel/mongoose-delete/pull/163)
+- Setup GitHub action for tests
+    - OS: `[ubuntu-22.04, ubuntu-24.04]`
+    - Node: `[16, 18, 20, 22, 24]`
+    - MongoDB: `['6.0.15', '7.0.12', '8.2.0']`
+
 ## [v1.0.2]
 > February 5, 2024
 - Update `devDependencies` to `"mongoose": "^8.1.1"`
