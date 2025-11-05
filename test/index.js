@@ -2032,6 +2032,30 @@ describe("mongoose_delete find method overridden with populate", function () {
         }
     });
 
+    it("populate() -> should return ONLY deleted sub-document using { onlyDeleted: true }", async function () {
+        try {
+            const documents = await TestPopulate2
+                .findWithDeleted()
+                .populate({ path: 'test', options: { onlyDeleted: true } })
+                .exec();
+
+            documents.length.should.equal(3);
+
+            var student1 = documents.findIndex(function(i) { return i.name === "Student 1" });
+            var student2 = documents.findIndex(function(i) { return i.name === "Student 2" });
+            var student3 = documents.findIndex(function(i) { return i.name === "Student 3" });
+
+            expect(documents[student1].test).not.to.be.null;
+            expect(documents[student2].test).to.be.null;
+            expect(documents[student3].test).not.to.be.null;
+
+            documents[student1].test.deleted.should.equal(true);
+            documents[student3].test.deleted.should.equal(true);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
     it("populate() -> should not return deleted documents and sub-documents", async function () {
         try {
             const documents = await TestPopulate2

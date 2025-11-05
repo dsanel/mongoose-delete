@@ -171,6 +171,14 @@ module.exports = function (schema, options) {
                             query.where({deleted: false});
                         }
                     }
+
+                    if (arguments[2] && arguments[2].onlyDeleted === true) {
+                        if (use$neOperator) {
+                            query.where('deleted').ne(false);
+                        } else {
+                            query.where({deleted: true});
+                        }
+                    }
                     return query;
                 };
                 schema.statics[method + 'Deleted'] = function () {
