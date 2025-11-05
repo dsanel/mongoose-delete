@@ -831,6 +831,15 @@ describe("check not overridden static methods", function () {
             should.not.exist(err);
         }
     });
+
+    it("distinct() -> should return 3 documents", async function () {
+        try {
+            const doc = await TestModel.distinct('name');
+            doc.should.have.members(['Obi-Wan Kenobi', 'Darth Vader', 'Luke Skywalker']);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
 });
 
 describe("check overridden static methods: { overrideMethods: 'all' }", function () {
@@ -1166,6 +1175,33 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
             should.not.exist(err);
         }
     });
+
+    it("distinct() -> should return 1 documents", async function () {
+        try {
+            const doc = await TestModel.distinct('name');
+            doc.should.have.members(['Darth Vader']);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("distinctDeleted() -> should return 2 documents", async function () {
+        try {
+            const doc = await TestModel.distinctDeleted('name');
+            doc.should.have.members(['Obi-Wan Kenobi', 'Luke Skywalker']);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("distinctWithDeleted() -> should return 3 documents", async function () {
+        try {
+            const doc = await TestModel.distinctWithDeleted('name');
+            doc.should.have.members(['Obi-Wan Kenobi', 'Darth Vader', 'Luke Skywalker']);
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
 });
 
 describe("check the existence of override static methods: { overrideMethods: true }", function () {
@@ -1270,9 +1306,9 @@ describe("check the existence of override static methods: { overrideMethods: tru
     });
 });
 
-describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany'] }", function () {
+describe("check the existence of override static methods: { overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany', 'distinct'] }", function () {
     var TestSchema = new Schema({name: String}, {collection: 'mongoose_delete_test'});
-    TestSchema.plugin(mongoose_delete, {overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany']});
+    TestSchema.plugin(mongoose_delete, {overrideMethods: ['testError', 'count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany', 'distinct']});
     var TestModel = mongoose.model('Test7', TestSchema);
 
     it("testError() -> method should not exist", function () {
@@ -1373,6 +1409,18 @@ describe("check the existence of override static methods: { overrideMethods: ['t
 
     it("updateManyWithDeleted() -> method should exist", function () {
         expect(TestModel.updateManyWithDeleted).to.exist;
+    });
+
+    it("distinct() => method should exist", function () {
+        expect(TestModel.distinct).to.exist;
+    });
+
+    it("distinctDeleted() => method should exist", function () {
+        expect(TestModel.distinctDeleted).to.exist;
+    });
+
+    it("distinctWithDeleted() => method should exist", function () {
+        expect(TestModel.distinctWithDeleted).to.exist;
     });
 });
 

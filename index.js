@@ -121,7 +121,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany', 'aggregate'];
+        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateOne', 'updateMany', 'aggregate', 'distinct'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -159,7 +159,7 @@ module.exports = function (schema, options) {
         }
 
         finalList.forEach(function(method) {
-            if (['count', 'countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
+            if (['count', 'countDocuments', 'find', 'findOne', 'distinct'].indexOf(method) > -1) {
                 var modelMethodName = method;
 
                 schema.statics[method] = function () {

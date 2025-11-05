@@ -244,7 +244,7 @@ We have the option to override all standard methods or only specific methods. Ov
 | aggregate()                | aggregateDeleted                   | aggregateWithDeleted                   |
 | findById()                 | Please use findOne                 | Please use findOneWithDeleted          |
 | findByIdAndUpdate()        | Please use findOneAndUpdateDeleted | Please use findOneAndUpdateWithDeleted |
-
+| distinct()                 | distinctDeleted                    | distinctWithDeleted                    |
 
 ### Examples how to override one or multiple methods
 
