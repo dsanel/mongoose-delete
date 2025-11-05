@@ -1,3 +1,12 @@
+## [v1.0.4]
+> November 5, 2025
+- Add option to popylate with { onlyDeleted: true } ([davidsierradz](https://github.com/davidsierradz)) [#169](https://github.com/dsanel/mongoose-delete/pull/169)
+- Add distinct method to the list of supported methods ([DevooKim](https://github.com/DevooKim)) [#149](https://github.com/dsanel/mongoose-delete/pull/149)
+- Setup GitHub action for tests
+    - OS: `[ubuntu-22.04, ubuntu-24.04]`
+    - Node: `[16, 18, 20, 22, 24]`
+    - MongoDB: `['6.0', '7.0', '8.0']`
+
 ## [v1.0.3]
 > November 5, 2025
 - Update `devDependencies`: `chai`, `mocha`, `nyc`
