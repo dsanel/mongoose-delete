@@ -332,8 +332,10 @@ module.exports = function (schema, options) {
         callback = adjustCallbackForMongooseVersion(callback);
 
         var doc = {
+            $set:{
+                deleted: false
+            },
             $unset:{
-                deleted: true,
                 deletedAt: true,
                 deletedBy: true
             }
