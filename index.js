@@ -143,19 +143,30 @@ module.exports = function (schema, options) {
         if (finalList.indexOf('aggregate') > -1) {
             schema.pre('aggregate', function() {
                 var firstMatch = this.pipeline()[0];
+
                 var hasDeletedMatchStage = typeof firstMatch.$match?.deleted !== 'undefined'
                 var shouldShowAllDocuments = firstMatch.$match?.showAllDocuments === true
 
-                if(hasDeletedMatchStage || shouldShowAllDocuments){
-                    var {showAllDocuments, ...replacement} = firstMatch.$match;
+                if (hasDeletedMatchStage || shouldShowAllDocuments) {
+                    var { showAllDocuments, ...replacement } = firstMatch.$match;
                     this.pipeline().shift();
-                    if(Object.keys(replacement).length > 0){
-                        this.pipeline().unshift({ $match: replacement });
+                    if (Object.keys(replacement).length > 0) {
+                        this.pipeline().unshift({
+                            $match: replacement
+                        });
                     }
-                } else if(!hasDeletedMatchStage && use$neOperator){
-                    this.pipeline().unshift({ $match: { deleted: { '$ne': true } } });
-                } else if(!hasDeletedMatchStage && !use$neOperator){
-                    this.pipeline().unshift({ $match: { deleted: false } });
+                } else if (!hasDeletedMatchStage && use$neOperator) {
+                    this.pipeline().unshift({
+                        $match: {
+                            deleted: { '$ne': true }
+                        }
+                    });
+                } else if (!hasDeletedMatchStage && !use$neOperator) {
+                    this.pipeline().unshift({
+                        $match: {
+                            deleted: false
+                        }
+                    });
                 }
             });
         }
