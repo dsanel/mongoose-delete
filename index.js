@@ -144,16 +144,29 @@ module.exports = function (schema, options) {
             schema.pre('aggregate', function() {
                 var firstMatch = this.pipeline()[0];
 
-                if(firstMatch.$match?.deleted?.$ne !== false){
-                    if(firstMatch.$match?.showAllDocuments === 'true'){
-                        var {showAllDocuments, ...replacement} = firstMatch.$match;
-                        this.pipeline().shift();
-                        if(Object.keys(replacement).length > 0){
-                            this.pipeline().unshift({ $match: replacement });
-                        }
-                    }else{
-                        this.pipeline().unshift({ $match: { deleted: { '$ne': true } } });
+                var hasDeletedMatchStage = typeof firstMatch.$match?.deleted !== 'undefined'
+                var shouldShowAllDocuments = firstMatch.$match?.showAllDocuments === true
+
+                if (hasDeletedMatchStage || shouldShowAllDocuments) {
+                    var { showAllDocuments, ...replacement } = firstMatch.$match;
+                    this.pipeline().shift();
+                    if (Object.keys(replacement).length > 0) {
+                        this.pipeline().unshift({
+                            $match: replacement
+                        });
                     }
+                } else if (!hasDeletedMatchStage && use$neOperator) {
+                    this.pipeline().unshift({
+                        $match: {
+                            deleted: { '$ne': true }
+                        }
+                    });
+                } else if (!hasDeletedMatchStage && !use$neOperator) {
+                    this.pipeline().unshift({
+                        $match: {
+                            deleted: false
+                        }
+                    });
                 }
             });
         }
@@ -204,7 +217,7 @@ module.exports = function (schema, options) {
                     schema.statics[method + 'WithDeleted'] = function () {
                         var args = [];
                         Array.prototype.push.apply(args, arguments);
-                        var match = { $match : { showAllDocuments : 'true' } };
+                        var match = { $match : { showAllDocuments : true } };
                         arguments.length ? args[0].unshift(match) : args.push([match]);
                         return Model[method].apply(this, args);
                     };
