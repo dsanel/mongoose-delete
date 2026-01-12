@@ -13,6 +13,7 @@ mongoose-delete is simple and lightweight plugin that enables soft deletion of d
   - [Add __deletedBy__ key to record who deleted document](#who-has-deleted-the-data)
   - Restore deleted documents using __restore__ method
   - [Bulk delete and restore](#bulk-delete-and-restore)
+  - [Support for Sessions and Transactions](#sessions-and-transactions)
   - [Option to override static methods](#examples-how-to-override-one-or-multiple-methods) (__count, countDocuments, find, findOne, findOneAndUpdate, update, updateOne, updateMany__)
   - [For overridden methods we have two additional methods](#method-overridden): __methodDeleted__ and __methodWithDeleted__
   - [Disable model validation on delete](#disable-model-validation-on-delete)
@@ -227,6 +228,31 @@ Pet.restore().exec(function (err, result) { ... });
 Pet.restore({age:10}).exec(function (err, result) { ... });
 ```
 
+### Sessions and Transactions
+
+You can pass a Mongoose session in the options to perform deletions within a transaction.
+```javascript
+const session = await mongoose.startSession();
+session.startTransaction();
+
+try {
+    const idUser = "user_123";
+    
+    // Pass session in the options object
+    await Pet.delete({ age: { $gte: 10 } }, idUser, { session });
+    
+    // You can also perform a single document delete with a session
+    const fluffy = await Pet.findOne({ name: 'Fluffy' }).session(session);
+    await fluffy.delete(idUser, { session });
+
+    await session.commitTransaction();
+} catch (error) {
+    await session.abortTransaction();
+    throw error;
+} finally {
+    session.endSession();
+}
+```
 ### Method overridden
 
 We have the option to override all standard methods or only specific methods. Overridden methods will exclude deleted documents from results, documents that have ```deleted = true```. Every overridden method will have two additional methods, so we will be able to work with deleted documents.

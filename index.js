@@ -89,11 +89,11 @@ module.exports = function (schema, options) {
         return mongooseMajorVersion >= 7 ? undefined : callback;
     }
 
-    function updateDocumentsByQuery(schema, conditions, updateQuery, callback) {
+    function updateDocumentsByQuery(schema, conditions, updateQuery, session, callback) {
         if (schema[mainUpdateWithDeletedMethod]) {
-            return schema[mainUpdateWithDeletedMethod](conditions, updateQuery, { multi: true }, callback);
+            return schema[mainUpdateWithDeletedMethod](conditions, updateQuery, { multi: true, session: session || null }, callback);
         } else {
-            return schema[mainUpdateMethod](conditions, updateQuery, { multi: true }, callback);
+            return schema[mainUpdateMethod](conditions, updateQuery, {multi: true, session: session || null }, callback);
         }
     }
 
@@ -281,16 +281,35 @@ module.exports = function (schema, options) {
         return this.save(callback);
     };
 
-    schema.statics.delete =  function (conditions, deletedBy, callback) {
+    schema.statics.delete =  function (conditions, deletedBy, options, callback) {
         if (typeof deletedBy === 'function') {
             callback = deletedBy;
             conditions = conditions;
             deletedBy = null;
-        } else if (typeof conditions === 'function') {
+            options = {};
+        }
+        else if (typeof conditions === 'function') {
             callback = conditions;
             conditions = {};
             deletedBy = null;
+            options = {};
         }
+        else if (typeof options === 'function') {
+            callback = options;
+            conditions = conditions;
+            deletedBy = deletedBy;
+            options = {};
+        }
+
+        const isObjectId = (val) => mongoose.Types.ObjectId.isValid(val) && (val instanceof mongoose.Types.ObjectId || val._bsontype === 'ObjectID');
+
+        if (deletedBy && !isObjectId(deletedBy) && typeof deletedBy === 'object' && !options) {
+            options = deletedBy;
+            deletedBy = null;
+        }
+
+        conditions = conditions || {};
+        options = options || {};
 
         callback = adjustCallbackForMongooseVersion(callback);
 
@@ -306,7 +325,8 @@ module.exports = function (schema, options) {
             doc.deletedBy = deletedBy;
         }
 
-        return updateDocumentsByQuery(this, conditions, doc, callback);
+        const session = options?.session || null;
+        return updateDocumentsByQuery(this, conditions, doc, session, callback);
     };
 
     schema.statics.deleteById =  function (id, deletedBy, callback) {

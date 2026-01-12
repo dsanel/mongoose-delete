@@ -4,6 +4,8 @@ var chai = require('chai'),
     mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 
+const { MongoMemoryReplSet } = require('mongodb-memory-server');
+
 var mongoose_delete = require('../');
 
 var mongooseMajorVersion = +mongoose.version[0]; // 4, 5, 6...
@@ -46,12 +48,22 @@ chai.use(function (_chai, utils) {
 });
 
 before(async function () {
-    await mongoose.connect(process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/test');
+    // Increase timeout to 10 seconds for the replica set to spin up
+    this.timeout(10000); 
+
+    replset = await MongoMemoryReplSet.create({ 
+        replSet: { count: 1 } 
+    });
+    const uri = replset.getUri();
+    await mongoose.connect(uri);
 });
 
 after(async function () {
-    await mongoose.connection.db.dropDatabase();
+    this.timeout(10000);
     await mongoose.disconnect();
+    if (replset) {
+        await replset.stop();
+    }
 });
 
 describe("mongoose_delete delete method without callback function", function () {
@@ -642,6 +654,81 @@ describe("mongoose_delete with options: { deletedBy : true }, using option: type
         } catch (err) {
             should.not.exist(err);
         }
+    });
+});
+
+describe("mongoose_delete with options: { session }", function () {
+    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_session_test' });
+    TestSchema.plugin(mongoose_delete, { deletedBy: true, deletedByType: String, overrideMethods: 'all' });
+    var Test = mongoose.model('TestSessionOptions', TestSchema);
+
+    var userIdCustom = "custom_user_id_12345678";
+
+    beforeEach(async function () {
+        await Test.create([
+            { name: 'Puffy1' },
+            { name: 'Puffy2' }
+        ]);
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection("mongoose_delete_session_test");
+    });
+
+    it("delete() -> should support sessions and persist change on commit", async function () {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            await Test.delete({ name: 'Puffy1' }, userIdCustom, { session });
+            await session.commitTransaction();
+        } catch (err) {
+            await session.abortTransaction();
+            throw err;
+        } finally {
+            session.endSession();
+        }
+
+        const docOutside = await Test.findOneWithDeleted({ name: 'Puffy1' });
+        
+        expect(docOutside).to.exist;
+        docOutside.deleted.should.equal(true);
+        docOutside.deletedBy.should.equal(userIdCustom);
+    });
+
+    it("delete() -> should rollback deleted status if session is aborted", async function () {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            await Test.delete({ name: 'Puffy2' }, userIdCustom, { session });
+            
+            await session.abortTransaction();
+        } catch (err) {
+        } finally {
+            session.endSession();
+        }
+
+        const doc = await Test.findOne({ name: 'Puffy2' });
+        expect(doc).to.exist;
+        doc.deleted.should.equal(false);
+        should.not.exist(doc.deletedBy);
+    });
+
+    it("delete() -> should work with null deletedBy when session is provided in options", async function () {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            await Test.delete({ name: 'Puffy1' }, null, { session });
+            await session.commitTransaction();
+        } finally {
+            session.endSession();
+        }
+
+        const doc = await Test.findOneWithDeleted({ name: 'Puffy1' });
+        doc.deleted.should.equal(true);
+        should.not.exist(doc.deletedBy);
     });
 });
 
