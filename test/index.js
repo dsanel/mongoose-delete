@@ -772,7 +772,7 @@ describe("check not overridden static methods", function () {
 
     it("findOneAndUpdate() -> should find and update deleted document", async function () {
         try {
-            const doc = await TestModel.findOneAndUpdate({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {new: true})
+            const doc = await TestModel.findOneAndUpdate({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {returnDocument: 'after'})
             expect(doc).not.to.be.null;
             doc.name.should.equal('Obi-Wan Kenobi Test');
         } catch (err) {
@@ -952,7 +952,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
 
     it("findOneAndUpdate() -> should not find and update deleted document", async function () {
         try {
-            const doc = await TestModel.findOneAndUpdate({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {new: true});
+            const doc = await TestModel.findOneAndUpdate({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {returnDocument: 'after'});
             expect(doc).to.be.null;
         } catch (err) {
             should.not.exist(err);
@@ -961,7 +961,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
 
     it("findOneAndUpdateDeleted() -> should find and update deleted document", async function () {
         try {
-            const doc = await TestModel.findOneAndUpdateDeleted({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {new: true});
+            const doc = await TestModel.findOneAndUpdateDeleted({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {returnDocument: 'after'});
             expect(doc).not.to.be.null;
         } catch (err) {
             should.not.exist(err);
@@ -970,7 +970,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
 
     it("findOneAndUpdateWithDeleted() -> should find and update deleted document", async function () {
         try {
-            const doc = await TestModel.findOneAndUpdateWithDeleted({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {new: true});
+            const doc = await TestModel.findOneAndUpdateWithDeleted({name: 'Obi-Wan Kenobi'}, {name: 'Obi-Wan Kenobi Test'}, {returnDocument: 'after'});
             expect(doc).not.to.be.null;
         } catch (err) {
             should.not.exist(err);
@@ -979,7 +979,7 @@ describe("check overridden static methods: { overrideMethods: 'all' }", function
 
     it("findOneAndUpdateWithDeleted() -> should find and update not deleted document", async function () {
         try {
-            const doc = await TestModel.findOneAndUpdateWithDeleted({name: 'Darth Vader'}, {name: 'Darth Vader Test'}, {new: true});
+            const doc = await TestModel.findOneAndUpdateWithDeleted({name: 'Darth Vader'}, {name: 'Darth Vader Test'}, {returnDocument: 'after'});
             expect(doc).not.to.be.null;
         } catch (err) {
             should.not.exist(err);
@@ -2204,6 +2204,69 @@ describe("model validation on restore (default): { validateBeforeRestore: true }
                 e.name.should.exist;
                 e.name.should.equal('ValidationError');
             }
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+});
+
+describe("Document.prototype.updateOne compatibility with overrideMethods (Mongoose 9.5+ regression)", function () {
+    // Mongoose 9.5.0 changed Document.prototype.updateOne to call the static
+    // Model.updateOne() with NO arguments first to build a query object, then
+    // configure it. The mongoose-delete override of updateOne called
+    // parseUpdateArguments() with no args, which returned [], so args[0] was
+    // undefined and `args[0].deleted = ...` threw:
+    //   "Cannot set properties of undefined (setting 'deleted')"
+    var TestSchema = new Schema({ name: String }, { collection: 'mongoose_delete_test_doc_updateone' });
+    TestSchema.plugin(mongoose_delete, { overrideMethods: true });
+    var TestModel = mongoose.model('TestDocUpdateOne', TestSchema);
+
+    beforeEach(async function () {
+        await TestModel.create([
+            { name: 'Anakin Skywalker' },
+            { name: 'Padme Amidala' },
+        ]);
+    });
+
+    afterEach(async function () {
+        await mongoose.connection.db.dropCollection('mongoose_delete_test_doc_updateone');
+    });
+
+    it("instance.updateOne(update) -> should not throw 'Cannot set properties of undefined'", async function () {
+        try {
+            const instance = await TestModel.findOne({ name: 'Anakin Skywalker' });
+            await instance.updateOne({ $set: { name: 'Darth Vader' } });
+
+            const updated = await TestModel.findOneWithDeleted({ _id: instance._id });
+            updated.name.should.equal('Darth Vader');
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("instance.updateOne(update) -> should update only the correct document by _id", async function () {
+        try {
+            const instance = await TestModel.findOne({ name: 'Anakin Skywalker' });
+            await instance.updateOne({ $set: { name: 'Darth Vader' } });
+
+            const other = await TestModel.findOne({ name: 'Padme Amidala' });
+            expect(other).not.to.be.null;
+            other.name.should.equal('Padme Amidala');
+        } catch (err) {
+            should.not.exist(err);
+        }
+    });
+
+    it("instance.updateOne(update) -> should work on a soft-deleted document", async function () {
+        try {
+            const instance = await TestModel.findOne({ name: 'Anakin Skywalker' });
+            await instance.delete();
+
+            await instance.updateOne({ $set: { name: 'Darth Vader' } });
+
+            const updated = await TestModel.findOneWithDeleted({ _id: instance._id });
+            updated.name.should.equal('Darth Vader');
+            updated.deleted.should.equal(true);
         } catch (err) {
             should.not.exist(err);
         }

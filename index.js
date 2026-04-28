@@ -225,6 +225,15 @@ module.exports = function (schema, options) {
                     };
                 } else {
                     schema.statics[method] = function () {
+                        // Mongoose 9.5+ calls the static with no arguments from
+                        // Document.prototype.updateOne to obtain a bare query builder,
+                        // then configures it internally. Skip filter injection in that
+                        // case and return the plain query builder so Mongoose can
+                        // finish setting it up.
+                        if (arguments.length === 0) {
+                            return Model[method].apply(this, arguments);
+                        }
+
                         var args = parseUpdateArguments.apply(undefined, arguments);
 
                         if (use$neOperator) {
@@ -237,6 +246,10 @@ module.exports = function (schema, options) {
                     };
 
                     schema.statics[method + 'Deleted'] = function () {
+                        if (arguments.length === 0) {
+                            return Model[method].apply(this, arguments);
+                        }
+
                         var args = parseUpdateArguments.apply(undefined, arguments);
 
                         if (use$neOperator) {
